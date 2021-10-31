@@ -45,6 +45,31 @@ class Toa_Cmd_Code:
   TOA_CMD_TPC           = 0x19
   TOA_CMD_ASSOCIATE     = 0x1A
 
+class Tile_Song:
+  TILE_SONG_1_CLICK      = 0x00
+  TILE_SONG_FIND         = 0x01
+  TILE_SONG_ACTIVE       = 0x02
+  TILE_SONG_SLEEP        = 0x03
+  TILE_SONG_WAKEUP       = 0x04
+  TILE_SONG_FACTORY_TEST = 0x05
+  TILE_SONG_MYSTERY      = 0x06
+  TILE_SONG_SILENT       = 0x07
+  TILE_SONG_BUTTON       = 0x08
+  TILE_SONG_WAKEUP_PART  = 0x09
+  TILE_SONG_DT_SUCCESS   = 0x0a
+  TILE_SONG_DT_FAILURE   = 0x0b
+  TILE_SONG_2_CLICK      = 0x0c
+  TILE_SONG_1_BIP        = 0x0d
+  TILE_SONG_2_BIP        = 0x0e
+  TILE_SONG_3_BIP        = 0x0f
+  TILE_SONG_4_BIP        = 0x10
+  TILE_SONG_5_BIP        = 0x11
+  TILE_SONG_6_BIP        = 0x12
+  TILE_SONG_7_BIP        = 0x13
+  TILE_SONG_DT_HB        = 0x14
+  TILE_SONG_MAX          = 0x15
+  TILE_SONG_STOP         = 0xFF
+
 class Tile:
 
     client = None
@@ -60,18 +85,27 @@ class Tile:
         await self.client.connect()
         return self
 
+    @staticmethod
+    def create_session_key(auth_key: bytes, allocated_cid: bytes, rand_t: bytes):
+        message = rand_a + rand_t + allocated_cid + sres
+        # only uses 16 bytes (or half of the hmac)
+        session_key = hmac.new(auth_key, msg=message, digestmod = hashlib.sha256).digest()[:16]
+        return session_key
+
     async def open_channel_rsp_callback(self, sender: int, data: bytearray) -> None:
         # check that client has been set
         assert self.client is not None, "Client is not set"
 
         # found in toa.h:190
         # extract data into variables for creating session key
+        
+        # TODO verify this RSP code is the one we expect by adding assertion
         toa_rsp = data[5:6]
         self.allocated_cid = data[6:7]
         rand_t = data[7:]
-        message = rand_a + rand_t + self.allocated_cid + sres
-        # only uses 16 bytes (or half of the hmac)
-        self.session_key = hmac.new(self.auth_key, msg=message, digestmod = hashlib.sha256).digest()[:16]
+
+        self.session_key = Tile.create_session_key(self.auth_key, self.allocated_cid, rand_t)
+
         self.done = True
 
     async def open_channel(self) -> None:
@@ -96,7 +130,10 @@ class Tile:
         # remove callback handler
         await self.client.stop_notify(TILE_TOA_RSP_UUID)
 
-    async def play_song(self) -> None:
+    # the implicit duration is 0xfe, which appears to just play the song in its entirety
+    # strength ranges from 0-3, where 0 is silent and 3 is loudest
+    # according to tile_song_module.h:214
+    async def play_song(self, number: int, strength: int) -> None:
         # check that client has been set
         assert self.client is not None, "Client is not set"
         # check that session_key has been set
@@ -104,10 +141,18 @@ class Tile:
         # check that allocated_cid has been set
         assert self.allocated_cid is not None, "Channel must be opened, call open_channel_rsp_callback before this method"
 
+        # assert correct input parameters
+        assert 0 <= strength <= 3, "Strength must have a value in the range of 0-3"
+
         toa_cmd_code = Toa_Cmd_Code.TOA_CMD_SONG.to_bytes(1, byteorder='big')
+        
         # second byte is the number
+        numberByte = number.to_bytes(1, byteorder='big')
         # third byte is the strength
-        toa_cmd_payload = b"\x02\04\x01"
+
+        strengthByte = strength.to_bytes(1, byteorder='big')
+
+        toa_cmd_payload = b"\x02" + numberByte + strengthByte
         # necessary for mic calculations
         MAX_PAYLOAD_LEN = 22
         toa_cmd_code_and_payload_len = (len(toa_cmd_code) + len(toa_cmd_payload)).to_bytes(1, byteorder='big')
