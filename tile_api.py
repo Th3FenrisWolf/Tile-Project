@@ -4,18 +4,12 @@ from bleak import BleakClient
 import hmac
 import hashlib
 
-# specifc to our tile, acquired from ble scanning and verified in disassembly
-address = "e6:9e:55:1a:91:28"
-
 # constants defined within tile_lib.h
 TILE_TOA_CMD_UUID = "9d410018-35d6-f4dd-ba60-e7bd8dc491c0"
 TILE_TOA_RSP_UUID = "9d410019-35d6-f4dd-ba60-e7bd8dc491c0"
 
 # CID for TOA connectionless channel defined in toa.h:104
 TOA_CONNECTIONLESS_CID = 0
-
-# specifc to our tile, in disassembly from toa_module struct
-AUTH_KEY = b"\x59\xbe\xca\x33\xac\x3d\x4a\x65\xc7\x1e\xeb\xca\x8d\x91\x8b\x77"
 
 # random byte values, required random byte as found in toa.h:295 
 rand_a = b"\x00" * 14
@@ -59,9 +53,10 @@ class Tile:
     done = False
 
     @classmethod
-    async def create(self, mac_address: str):
+    async def create(self, mac_address: str, auth_key: bytes):
         self = Tile()
         self.client = BleakClient(mac_address)
+        self.auth_key = auth_key
         await self.client.connect()
         return self
 
@@ -76,7 +71,7 @@ class Tile:
         rand_t = data[7:]
         message = rand_a + rand_t + self.allocated_cid + sres
         # only uses 16 bytes (or half of the hmac)
-        self.session_key = hmac.new(AUTH_KEY, msg=message, digestmod = hashlib.sha256).digest()[:16]
+        self.session_key = hmac.new(self.auth_key, msg=message, digestmod = hashlib.sha256).digest()[:16]
         self.done = True
 
     async def open_channel(self) -> None:
@@ -109,10 +104,9 @@ class Tile:
         # check that allocated_cid has been set
         assert self.allocated_cid is not None, "Channel must be opened, call open_channel_rsp_callback before this method"
 
-        # now write
-        toa_cmd_code = b"\05"
+        toa_cmd_code = Toa_Cmd_Code.TOA_CMD_SONG.to_bytes(1, byteorder='big')
         # second byte is the number
-        # third byte is the strength 
+        # third byte is the strength
         toa_cmd_payload = b"\x02\04\x01"
         # necessary for mic calculations
         MAX_PAYLOAD_LEN = 22
