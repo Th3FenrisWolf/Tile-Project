@@ -1,5 +1,6 @@
 import asyncio
 from bleak import BleakClient
+import bleak
 
 import hmac
 import hashlib
@@ -82,7 +83,16 @@ class Tile:
         self = Tile()
         self.client = BleakClient(mac_address)
         self.auth_key = auth_key
-        await self.client.connect()
+
+        while True:
+            try:
+                await self.client.connect()
+                break
+            except asyncio.exceptions.TimeoutError:
+                print('AsyncIO Timed Out, Trying Again')
+            except bleak.exc.BleakError:
+                print('Bleak Device Not Found, Trying Again')
+        # await self.client.connect()
         return self
 
     @staticmethod
