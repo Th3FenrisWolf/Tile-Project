@@ -105,10 +105,13 @@ class Tile:
             except asyncio.exceptions.TimeoutError as e:
                 print('AsyncIO Timed Out, Trying Again')
             except bleak.exc.BleakError as e:
-                print('Bleak Device Not Found, Trying Again')
-            except Exception as e:
-                print('That\'s Awkward... Please Use Linux Next Time')
+                print('Fatal Bleak Error, See Below:')
                 print(f'\t{e}')
+                exit()
+            except Exception as e:
+                print('Unexpected Error, See Below:')
+                print(f'\t{e}')
+                exit()
 
         return self
 
