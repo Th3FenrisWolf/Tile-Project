@@ -10,67 +10,67 @@ import hashlib
 TILE_TOA_CMD_UUID = "9d410018-35d6-f4dd-ba60-e7bd8dc491c0"
 TILE_TOA_RSP_UUID = "9d410019-35d6-f4dd-ba60-e7bd8dc491c0"
 
-# CID for TOA connectionless channel defined in toa.h:104
+# Channel ID (CID) for TOA connectionless channel defined in toa.h:104
 TOA_CONNECTIONLESS_CID = 0
 
 # random byte values, required random byte as found in toa.h:295 
 rand_a = b"\x00" * 14
 
-# random byte values, required as seen in the assembly 
+# random byte values, required as seen used in the assembly 
 sres = b"\x22" * 4
 
 class Toa_Cmd_Code:
-  TOA_CMD_TOFU_CTL      = 0x01
-  TOA_CMD_TOFU_DATA     = 0x02
-  TOA_CMD_BDADDR        = 0x03
-  TOA_CMD_TDT           = 0x04 
-  TOA_CMD_SONG          = 0x05 
-  TOA_CMD_PPM           = 0x06 
-  TOA_CMD_ADV_INT       = 0x07
-  TOA_CMD_TKA           = 0x08
-  TOA_CMD_TAC           = 0x09 
-  TOA_CMD_TDG           = 0x0a 
-  TOA_CMD_TMD           = 0x0b 
-  TOA_CMD_TCU           = 0x0c 
-  TOA_CMD_TIME          = 0x0d 
-  TOA_CMD_TEST          = 0x0e 
-  TOA_CMD_TFC           = 0x0f 
-  TOA_CMD_OPEN_CHANNEL  = 0x10
-  TOA_CMD_CLOSE_CHANNEL = 0x11
-  TOA_CMD_READY         = 0x12
-  TOA_CMD_TDI           = 0x13 
-  TOA_CMD_AUTHENTICATE  = 0x14
-  TOA_CMD_TMF           = 0x15 
-  TOA_CMD_TLIL          = 0x16 
-  TOA_CMD_TEF           = 0x17
-  TOA_CMD_TRM           = 0x18
-  TOA_CMD_TPC           = 0x19
-  TOA_CMD_ASSOCIATE     = 0x1A
+    TOFU_CTL      = 0x01
+    TOFU_DATA     = 0x02
+    BDADDR        = 0x03
+    TDT           = 0x04 
+    SONG          = 0x05 
+    PPM           = 0x06 
+    ADV_INT       = 0x07
+    TKA           = 0x08
+    TAC           = 0x09 
+    TDG           = 0x0a 
+    TMD           = 0x0b 
+    TCU           = 0x0c 
+    TIME          = 0x0d 
+    TEST          = 0x0e 
+    TFC           = 0x0f 
+    OPEN_CHANNEL  = 0x10
+    CLOSE_CHANNEL = 0x11
+    READY         = 0x12
+    TDI           = 0x13 
+    AUTHENTICATE  = 0x14
+    TMF           = 0x15 
+    TLIL          = 0x16 
+    TEF           = 0x17
+    TRM           = 0x18
+    TPC           = 0x19
+    ASSOCIATE     = 0x1A
 
 class Tile_Song:
-  TILE_SONG_1_CLICK      = 0x00
-  TILE_SONG_FIND         = 0x01
-  TILE_SONG_ACTIVE       = 0x02
-  TILE_SONG_SLEEP        = 0x03
-  TILE_SONG_WAKEUP       = 0x04
-  TILE_SONG_FACTORY_TEST = 0x05
-  TILE_SONG_MYSTERY      = 0x06
-  TILE_SONG_SILENT       = 0x07
-  TILE_SONG_BUTTON       = 0x08
-  TILE_SONG_WAKEUP_PART  = 0x09
-  TILE_SONG_DT_SUCCESS   = 0x0a
-  TILE_SONG_DT_FAILURE   = 0x0b
-  TILE_SONG_2_CLICK      = 0x0c
-  TILE_SONG_1_BIP        = 0x0d
-  TILE_SONG_2_BIP        = 0x0e
-  TILE_SONG_3_BIP        = 0x0f
-  TILE_SONG_4_BIP        = 0x10
-  TILE_SONG_5_BIP        = 0x11
-  TILE_SONG_6_BIP        = 0x12
-  TILE_SONG_7_BIP        = 0x13
-  TILE_SONG_DT_HB        = 0x14
-  TILE_SONG_MAX          = 0x15
-  TILE_SONG_STOP         = 0xFF
+    CLICK_1      = 0x00
+    FIND         = 0x01
+    ACTIVE       = 0x02
+    SLEEP        = 0x03
+    WAKEUP       = 0x04
+    FACTORY_TEST = 0x05
+    MYSTERY      = 0x06
+    SILENT       = 0x07
+    BUTTON       = 0x08
+    WAKEUP_PART  = 0x09
+    DT_SUCCESS   = 0x0a
+    DT_FAILURE   = 0x0b
+    CLICK_2      = 0x0c
+    BIP_1        = 0x0d
+    BIP_2        = 0x0e
+    BIP_3        = 0x0f
+    BIP_4        = 0x10
+    BIP_5        = 0x11
+    BIP_6        = 0x12
+    BIP_7        = 0x13
+    DT_HB        = 0x14
+    MAX          = 0x15
+    STOP         = 0xFF
 
 class Tile:
 
@@ -147,12 +147,12 @@ class Tile:
 
         # set parameters for TOA open channel CMD
         cid = TOA_CONNECTIONLESS_CID.to_bytes(1, byteorder='big')
-        toa_cmd = Toa_Cmd_Code.TOA_CMD_OPEN_CHANNEL.to_bytes(1, byteorder='big')
+        toa_cmd = Toa_Cmd_Code.OPEN_CHANNEL.to_bytes(1, byteorder='big')
 
         # issue TOA open channel CMD
         await self.client.write_gatt_char(TILE_TOA_CMD_UUID, cid + sres + toa_cmd + rand_a)
 
-        # wait until callback executed, TODO: refactor once you learn how to code
+        # wait until callback executed
         while not self.done:
             await asyncio.sleep(0.01)
         self.done = False
@@ -174,16 +174,17 @@ class Tile:
         # assert correct input parameters
         assert 0 <= strength <= 3, "Strength must have a value in the range of 0-3"
 
-        toa_cmd_code = Toa_Cmd_Code.TOA_CMD_SONG.to_bytes(1, byteorder='big')
+        # first byte is the command
+        toa_cmd_code = Toa_Cmd_Code.SONG.to_bytes(1, byteorder='big')
         
         # second byte is the number
         numberByte = number.to_bytes(1, byteorder='big')
+        
         # third byte is the strength
-
         strengthByte = strength.to_bytes(1, byteorder='big')
 
         toa_cmd_payload = b"\x02" + numberByte + strengthByte
-        # necessary for mic calculations
+        # necessary for MIC calculations
         MAX_PAYLOAD_LEN = 22
         toa_cmd_code_and_payload_len = (len(toa_cmd_code) + len(toa_cmd_payload)).to_bytes(1, byteorder='big')
         toa_cmd_padding = (MAX_PAYLOAD_LEN - len(toa_cmd_code) - len(toa_cmd_payload)) * b"\0"
