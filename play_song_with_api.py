@@ -8,9 +8,14 @@ import time
 
 # specifc to our tile, acquired from ble scanning and verified in disassembly
 MAC_ADDRESS = "E6:9E:55:1A:91:28"
+# wallet
+# MAC_ADDRESS = "C8:DE:26:A7:E1:42"
+
 
 # specifc to our tile, in disassembly from toa_module struct
 AUTH_KEY = b"\x59\xbe\xca\x33\xac\x3d\x4a\x65\xc7\x1e\xeb\xca\x8d\x91\x8b\x77"
+
+
 
 async def main(): 
     args = sys.argv[1:]
