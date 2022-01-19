@@ -51,8 +51,11 @@ class Toa_Cmd_Code(Enum):
 
 class Tdi_Cmd_Code(Enum):
   unknown = b"\x01"
-  tileID = b"\x01"
-  firmwareVersion = b"\x02"
+  tileID = b"\x02"
+  firmwareVersion = b"\x03"
+  modelNumber = b"\x04"
+  hardwareVersion = b"\x05"
+  mac = b"\x06"
 
 async def send_connectionless_cmd(address: str, cmd_code: Toa_Cmd_Code, payload: bytes):
     async with BleakClient(address) as client:
@@ -62,5 +65,5 @@ async def send_connectionless_cmd(address: str, cmd_code: Toa_Cmd_Code, payload:
         # get TOA response
         return await client.read_gatt_char(TILE_TOA_RSP_UUID)
 
-ret = asyncio.run(send_connectionless_cmd(address, Toa_Cmd_Code.TOA_CMD_TDI, b"\x03"))
+ret = asyncio.run(send_connectionless_cmd(address, Toa_Cmd_Code.TOA_CMD_TDI, Tdi_Cmd_Code.firmwareVersion.value))
 print(ret)
