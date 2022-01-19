@@ -9,7 +9,7 @@ import hashlib
 # address = "e6:9e:55:1a:91:28"
 
 # backpack MAC
-address = "E1:5B:A3:01:A0:F1"
+address = "e6:9e:55:1a:91:28"
 
 # constants defined within tile_lib.h
 TILE_TOA_CMD_UUID = "9d410018-35d6-f4dd-ba60-e7bd8dc491c0"
@@ -49,15 +49,18 @@ class Toa_Cmd_Code(Enum):
   TOA_CMD_TPC           = b"\x19"
   TOA_CMD_ASSOCIATE     = b"\x1A"
 
+class Tdi_Cmd_Code(Enum):
+  unknown = b"\x01"
+  tileID = b"\x01"
+  firmwareVersion = b"\x02"
+
 async def send_connectionless_cmd(address: str, cmd_code: Toa_Cmd_Code, payload: bytes):
     async with BleakClient(address) as client:
-        async def toa_rsp_callback(sender: int, data: bytearray):
-            print(data)
-
-        # set up callback handle for TOA open channel RSP
-        await client.start_notify(TILE_TOA_RSP_UUID, toa_rsp_callback)
-
         # issue TOA command
         await client.write_gatt_char(TILE_TOA_CMD_UUID, TOA_CONNECTIONLESS_CID + SRES + cmd_code.value + payload)
 
-asyncio.run(send_connectionless_cmd(address, Toa_Cmd_Code.TOA_CMD_TDI, b"\x03"))
+        # get TOA response
+        return await client.read_gatt_char(TILE_TOA_RSP_UUID)
+
+ret = asyncio.run(send_connectionless_cmd(address, Toa_Cmd_Code.TOA_CMD_TDI, b"\x03"))
+print(ret)
