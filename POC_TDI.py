@@ -17,9 +17,6 @@ TILE_TOA_RSP_UUID = "9d410019-35d6-f4dd-ba60-e7bd8dc491c0"
 # CID for TOA connectionless channel defined in toa.h:104
 TOA_CONNECTIONLESS_CID = 0
 
-# specifc to our tile, in disassembly from toa_module struct
-AUTH_KEY = b"\x59\xbe\xca\x33\xac\x3d\x4a\x65\xc7\x1e\xeb\xca\x8d\x91\x8b\x77"
-
 # random byte values, required random byte as found in toa.h:295 
 rand_a = b"\x00" * 14
 
@@ -66,27 +63,6 @@ async def main(address):
         async def toa_open_channel_rsp_callback(sender: int, data: bytearray):
             print(data)
             return
-            # found in toa.h:190
-            toa_rsp = data[5:6]
-            allocated_cid = data[6:7]
-            rand_t = data[7:]
-            print(toa_rsp, allocated_cid, rand_t)
-            message = rand_a + rand_t + allocated_cid + sres
-            # only uses 16 bytes (or half of the hmac)
-            session_key = hmac.new(AUTH_KEY, msg=message, digestmod = hashlib.sha256).digest()[:16]
-            print(session_key)
-            # now write
-            toa_cmd_code = b"\x13"
-            toa_cmd_payload = b"\x02"
-            # necessary for mic calculations
-            MAX_PAYLOAD_LEN = 22
-            toa_cmd_code_and_payload_len = (len(toa_cmd_code) + len(toa_cmd_payload)).to_bytes(1, byteorder='big')
-            toa_cmd_padding = (MAX_PAYLOAD_LEN - len(toa_cmd_code) - len(toa_cmd_payload)) * b"\0"
-            new_message = b"\x01" + b"\x00" * 7 + b"\x01" + toa_cmd_code_and_payload_len + toa_cmd_code + toa_cmd_payload + toa_cmd_padding 
-            mic = hmac.new(session_key, msg=new_message, digestmod = hashlib.sha256).digest()[:4]
-            print(mic)
-            play_song = allocated_cid + toa_cmd_code + toa_cmd_payload + mic
-            await client.write_gatt_char(TILE_TOA_CMD_UUID, play_song)
 
         # set up callback handle for TOA open channel RSP
         await client.start_notify(TILE_TOA_RSP_UUID, toa_open_channel_rsp_callback)
