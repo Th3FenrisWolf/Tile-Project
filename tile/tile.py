@@ -8,7 +8,7 @@ import bleak
 import hmac
 import hashlib
 
-from commands.tdi import get_tile_id
+from commands.tdi import *
 
 # random byte values, required random byte as found in toa.h:295 
 rand_a = b"\x00" * 14
@@ -26,6 +26,18 @@ class Tile:
     @cached_property
     def tile_id(self) -> str:
         return get_tile_id(self.mac_address)
+
+    @cached_property
+    def fw_version(self) -> str:
+        return get_fw_version(self.mac_address)
+
+    @cached_property
+    def model_num(self) -> str:
+        return get_model_num(self.mac_address)
+
+    @cached_property
+    def hw_version(self) -> str:
+        return get_hw_version(self.mac_address)
 
     # todo move / hide method
     async def findTile(self, mac_address: str):

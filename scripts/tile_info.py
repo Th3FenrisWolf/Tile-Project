@@ -1,6 +1,6 @@
 from tile import Tile
 
-tile = Tile("<mac address>")  # TDI command doesn't require a channel, so auth key isn't needed
+tile = Tile("e6:9e:55:1a:91:28")  # TDI command doesn't require a channel, so auth key isn't needed
 
 # See @property decorator, store results so future references to properties that have 
 # already been used don't send unnecessary commands
