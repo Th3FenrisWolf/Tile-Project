@@ -1,6 +1,7 @@
 from enum import Enum
 import asyncio
 from time import sleep
+import bleak
 
 # constants defined within tile_lib.h
 TILE_TOA_CMD_UUID = "9d410018-35d6-f4dd-ba60-e7bd8dc491c0"
@@ -37,20 +38,20 @@ class Toa_Cmd_Code(Enum):
     TPC           = b"\x19"
     ASSOCIATE     = b"\x1A"
 
-async def send_connectionless_cmd(client, cmd_code: Toa_Cmd_Code, payload: bytes) -> bytes:
-    try:
-        await client.connect()
-
-        await asyncio.sleep(0.2)
-
+async def send_connectionless_cmd(mac_address, cmd_code: Toa_Cmd_Code, payload: bytes) -> bytes:
+    async with bleak.BleakClient(mac_address) as client:
+        shared_data = None
+        async def rsp_handler(sender, data):
+          nonlocal shared_data
+          shared_data = data
+          await client.stop_notify(TILE_TOA_RSP_UUID)
+    
         # issue TOA command
         await client.write_gatt_char(TILE_TOA_CMD_UUID, TOA_CONNECTIONLESS_CID + b"\x00\x00\x00\x00" + cmd_code.value + payload)
 
-        await asyncio.sleep(0.2)
+        await client.start_notify(TILE_TOA_RSP_UUID, rsp_handler)
 
-        # get TOA response
-        return await client.read_gatt_char(TILE_TOA_RSP_UUID)
-    except Exception as e:
-        print(e)
-    finally:
-        await client.disconnect()
+        while shared_data is None:
+          await asyncio.sleep(0.1)
+        
+        return shared_data

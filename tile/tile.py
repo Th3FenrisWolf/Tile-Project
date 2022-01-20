@@ -2,6 +2,7 @@ import asyncio
 from sqlite3 import connect
 from bleak import BleakClient
 from bleak import BleakScanner
+from functools import cached_property
 import bleak
 
 import hmac
@@ -22,9 +23,9 @@ class Tile:
     allocated_cid = None
     done = False
 
-    @property
-    def tile_id(self):
-        return get_tile_id(self.client)
+    @cached_property
+    def tile_id(self) -> str:
+        return get_tile_id(self.mac_address)
 
     # todo move / hide method
     async def findTile(self, mac_address: str):
@@ -65,10 +66,10 @@ class Tile:
         # bleak seems to require uppercase str, so this will catch if someone gave lowercase form
         self.mac_address = mac_address.upper()
 
-        loop = asyncio.get_event_loop()
-        self.client = loop.run_until_complete(self.findTile(self.mac_address))
+        #loop = asyncio.get_event_loop()
+        #self.client = loop.run_until_complete(self.findTile(self.mac_address))
 
-        loop.run_until_complete(self.connectTile())
+        #loop.run_until_complete(self.connectTile())
 
     @staticmethod
     def create_session_key(auth_key: bytes, allocated_cid: bytes, rand_t: bytes):
