@@ -1,4 +1,5 @@
 import asyncio
+from sqlite3 import connect
 from bleak import BleakClient
 from bleak import BleakScanner
 import bleak
@@ -6,48 +7,13 @@ import bleak
 import hmac
 import hashlib
 
-# constants defined within tile_lib.h
-TILE_TOA_CMD_UUID = "9d410018-35d6-f4dd-ba60-e7bd8dc491c0"
-TILE_TOA_RSP_UUID = "9d410019-35d6-f4dd-ba60-e7bd8dc491c0"
-
-# Channel ID (CID) for TOA connectionless channel defined in toa.h:104
-TOA_CONNECTIONLESS_CID = 0
+from commands.tdi import get_tile_id
 
 # random byte values, required random byte as found in toa.h:295 
 rand_a = b"\x00" * 14
 
 # random byte values, required as seen used in the assembly 
 sres = b"\x22" * 4
-
-class Toa_Cmd_Code:
-    TOFU_CTL      = 0x01
-    TOFU_DATA     = 0x02
-    BDADDR        = 0x03
-    TDT           = 0x04 
-    SONG          = 0x05 
-    PPM           = 0x06 
-    ADV_INT       = 0x07
-    TKA           = 0x08
-    TAC           = 0x09 
-    TDG           = 0x0a 
-    TMD           = 0x0b 
-    TCU           = 0x0c 
-    TIME          = 0x0d 
-    TEST          = 0x0e 
-    TFC           = 0x0f 
-    OPEN_CHANNEL  = 0x10
-    CLOSE_CHANNEL = 0x11
-    READY         = 0x12
-    TDI           = 0x13 
-    AUTHENTICATE  = 0x14
-    TMF           = 0x15 
-    TLIL          = 0x16 
-    TEF           = 0x17
-    TRM           = 0x18
-    TPC           = 0x19
-    ASSOCIATE     = 0x1A
-
-
 
 class Tile:
 
@@ -56,30 +22,30 @@ class Tile:
     allocated_cid = None
     done = False
 
-    @classmethod
-    async def create(self, mac_address: str, auth_key: bytes = None):
-        self = Tile()
-        self.auth_key = auth_key
+    @property
+    def tile_id(self):
+        return get_tile_id(self.client)
 
-        tileFound = False
-        bleakClientSetup = False
-        while not bleakClientSetup:
+    # todo move / hide method
+    async def findTile(self, mac_address: str):
+        while True:
             print('Searching For Tile...')
             async with BleakScanner() as scanner:
                 await asyncio.sleep(5.0)
-            for d in scanner.discovered_devices:
-                if d.address == mac_address:
-                    print("Tile Found!")
-                    self.client = BleakClient(d)
-                    bleakClientSetup = True
-                    break
-        
+                for d in scanner.discovered_devices:
+                    if d.address == mac_address:
+                        print("Tile Found!")
+                        return BleakClient(d)
+    
+    # todo move / hide method
+    async def connectTile(self):
         #connect using Bleak API's connect; attempt to catch exceptions
-        while not tileFound:
+        while True:
             print('Connecting To Tile...')
             try:
                 await self.client.connect(timeout = 30)
-                tileFound = True
+                print("Successfully Connected To Tile")
+                return
             except asyncio.exceptions.TimeoutError as e:
                 print('AsyncIO Timed Out, Trying Again')
             except bleak.exc.BleakError as e:
@@ -90,8 +56,19 @@ class Tile:
                 print('Unexpected Error, See Below:')
                 print(f'\t{e}')
                 exit()
+            finally:
+                await self.client.disconnect()
 
-        return self
+    def __init__(self, mac_address: str, auth_key: bytes = None):
+        self.auth_key = auth_key
+
+        # bleak seems to require uppercase str, so this will catch if someone gave lowercase form
+        self.mac_address = mac_address.upper()
+
+        loop = asyncio.get_event_loop()
+        self.client = loop.run_until_complete(self.findTile(self.mac_address))
+
+        loop.run_until_complete(self.connectTile())
 
     @staticmethod
     def create_session_key(auth_key: bytes, allocated_cid: bytes, rand_t: bytes):
