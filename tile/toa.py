@@ -55,3 +55,21 @@ async def send_connectionless_cmd(mac_address, cmd_code: Toa_Cmd_Code, payload: 
           await asyncio.sleep(0.1)
         
         return shared_data
+
+async def send_channel_cmd(mac_address, channel_id: bytes, cmd_code: Toa_Cmd_Code, payload: bytes) -> bytes:
+    async with bleak.BleakClient(mac_address) as client:
+        shared_data = None
+        async def rsp_handler(sender, data):
+          nonlocal shared_data
+          shared_data = data
+          await client.stop_notify(TILE_TOA_RSP_UUID)
+    
+        # issue TOA command
+        await client.write_gatt_char(TILE_TOA_CMD_UUID, channel_id + b"\x00\x00\x00\x00" + cmd_code.value + payload)
+
+        await client.start_notify(TILE_TOA_RSP_UUID, rsp_handler)
+
+        while shared_data is None:
+          await asyncio.sleep(0.1)
+        
+        return shared_data
