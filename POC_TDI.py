@@ -9,7 +9,7 @@ import hashlib
 # address = "e6:9e:55:1a:91:28"
 
 # backpack MAC
-address = "e6:9e:55:1a:91:28"
+address = "e6:9e:55:1a:91:28".upper()
 
 # constants defined within tile_lib.h
 TILE_TOA_CMD_UUID = "9d410018-35d6-f4dd-ba60-e7bd8dc491c0"
@@ -57,13 +57,24 @@ class Tdi_Cmd_Code(Enum):
   hardwareVersion = b"\x05"
   mac = b"\x06"
 
+
 async def send_connectionless_cmd(address: str, cmd_code: Toa_Cmd_Code, payload: bytes):
     async with BleakClient(address) as client:
+        shared_data = None
+        async def yikes(sender, data):
+          nonlocal shared_data
+          shared_data = data
+          await client.stop_notify(TILE_TOA_RSP_UUID)
+    
         # issue TOA command
         await client.write_gatt_char(TILE_TOA_CMD_UUID, TOA_CONNECTIONLESS_CID + SRES + cmd_code.value + payload)
 
-        # get TOA response
-        return await client.read_gatt_char(TILE_TOA_RSP_UUID)
+        await client.start_notify(TILE_TOA_RSP_UUID, yikes)
+
+        while shared_data is None:
+          await asyncio.sleep(0.1)
+        
+        return shared_data
 
 ret = asyncio.run(send_connectionless_cmd(address, Toa_Cmd_Code.TOA_CMD_TDI, Tdi_Cmd_Code.firmwareVersion.value))
 print(ret)
