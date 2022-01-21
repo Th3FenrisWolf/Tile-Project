@@ -25,3 +25,38 @@ class Songs:
     DT_HB        = 0x14
     MAX          = 0x15
     STOP         = 0xFF
+
+# the implicit duration is 0xfe, which appears to just play the song in its entirety
+# strength ranges from 0-3, where 0 is silent and 3 is loudest
+# according to tile_song_module.h:214
+async def play_song(self, number: int, strength: int) -> None:
+    # check that client has been set
+    assert self.client is not None, "Client is not set"
+    # check that session_key has been set
+    assert self.session_key is not None, "Channel must be opened, call open_channel_rsp_callback before this method"
+    # check that allocated_cid has been set
+    assert self.allocated_cid is not None, "Channel must be opened, call open_channel_rsp_callback before this method"
+
+    # assert correct input parameters
+    assert 0 <= strength <= 3, "Strength must have a value in the range of 0-3"
+
+    # first byte is the command
+    toa_cmd_code = Toa_Cmd_Code.SONG.to_bytes(1, byteorder='big')
+    
+    # second byte is the number
+    numberByte = number.to_bytes(1, byteorder='big')
+    
+    # third byte is the strength
+    strengthByte = strength.to_bytes(1, byteorder='big')
+
+    toa_cmd_payload = b"\x02" + numberByte + strengthByte
+    
+    # necessary for MIC calculations
+    MAX_PAYLOAD_LEN = 22
+    toa_cmd_code_and_payload_len = (len(toa_cmd_code) + len(toa_cmd_payload)).to_bytes(1, byteorder='big')
+    toa_cmd_padding = (MAX_PAYLOAD_LEN - len(toa_cmd_code) - len(toa_cmd_payload)) * b"\0"
+    new_message = b"\x01" + b"\x00" * 7 + b"\x01" + toa_cmd_code_and_payload_len + toa_cmd_code + toa_cmd_payload + toa_cmd_padding 
+    mic = hmac.new(self.session_key, msg=new_message, digestmod = hashlib.sha256).digest()[:4]
+    play_song = self.allocated_cid + toa_cmd_code + toa_cmd_payload + mic
+
+    await self.client.write_gatt_char(TILE_TOA_CMD_UUID, play_song)
