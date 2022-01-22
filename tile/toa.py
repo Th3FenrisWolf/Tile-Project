@@ -51,11 +51,12 @@ async def send_connectionless_cmd(mac_address, cmd_code: Toa_Cmd_Code, payload: 
         await client.start_notify(TILE_TOA_RSP_UUID, rsp_handler)
 
         while shared_data is None:
+          print("Waiting for response to send_connectionless_cmd...")
           await asyncio.sleep(0.1)
         
         return shared_data
 
-async def send_channel_cmd(mac_address, channel_id: bytes, cmd_code: Toa_Cmd_Code, payload: bytes) -> bytes:
+async def send_channel_cmd(mac_address: str, channel_id: bytes, cmd_code: Toa_Cmd_Code, payload: bytes) -> bytes:
     async with bleak.BleakClient(mac_address) as client:
         shared_data = None
         async def rsp_handler(sender, data):
@@ -69,6 +70,10 @@ async def send_channel_cmd(mac_address, channel_id: bytes, cmd_code: Toa_Cmd_Cod
         await client.start_notify(TILE_TOA_RSP_UUID, rsp_handler)
 
         while shared_data is None:
+          print("Waiting for response to send_channel_cmd...")
           await asyncio.sleep(0.1)
         
         return shared_data
+
+# TODO it appears that we can not just connect each time for send_connectionless_cmd/send_channel_cmd since the created channel does not persist
+# see toa_disconnect
