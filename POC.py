@@ -1,4 +1,5 @@
 import asyncio
+from urllib import response
 from bleak import BleakClient
 
 import hmac
@@ -10,9 +11,10 @@ address = "e6:9e:55:1a:91:28"
 # constants defined within tile_lib.h
 TILE_TOA_CMD_UUID = "9d410018-35d6-f4dd-ba60-e7bd8dc491c0"
 TILE_TOA_RSP_UUID = "9d410019-35d6-f4dd-ba60-e7bd8dc491c0"
+TILE_TILEID_CHAR_UUID = "9d410007-35d6-f4dd-ba60-e7bd8dc491c0"
 
 # CID for TOA connectionless channel defined in toa.h:104
-TOA_CONNECTIONLESS_CID = 0
+TOA_CONNECTIONLESS_CID = b"\x00"
 
 # specifc to our tile, in disassembly from toa_module struct
 AUTH_KEY = b"\x59\xbe\xca\x33\xac\x3d\x4a\x65\xc7\x1e\xeb\xca\x8d\x91\x8b\x77"
@@ -51,41 +53,74 @@ class Toa_Cmd_Code:
   TOA_CMD_TPC           = 0x19
   TOA_CMD_ASSOCIATE     = 0x1A
 
+count = 0
+
 async def main(address):
-    async with BleakClient(address) as client:
-        async def toa_open_channel_rsp_callback(sender: int, data: bytearray):
-            # found in toa.h:190
-            toa_rsp = data[5:6]
-            allocated_cid = data[6:7]
-            rand_t = data[7:]
-            print(toa_rsp, allocated_cid, rand_t)
-            message = rand_a + rand_t + allocated_cid + sres
-            # only uses 16 bytes (or half of the hmac)
-            session_key = hmac.new(AUTH_KEY, msg=message, digestmod = hashlib.sha256).digest()[:16]
-            print(session_key)
-            # now write
-            toa_cmd_code = b"\05"
-            # second byte is the number
-            # third byte is the strength 
-            toa_cmd_payload = b"\x02\04\x01"
-            # necessary for mic calculations
-            MAX_PAYLOAD_LEN = 22
-            toa_cmd_code_and_payload_len = (len(toa_cmd_code) + len(toa_cmd_payload)).to_bytes(1, byteorder='big')
-            toa_cmd_padding = (MAX_PAYLOAD_LEN - len(toa_cmd_code) - len(toa_cmd_payload)) * b"\0"
-            new_message = b"\x01" + b"\x00" * 7 + b"\x01" + toa_cmd_code_and_payload_len + toa_cmd_code + toa_cmd_payload + toa_cmd_padding 
-            mic = hmac.new(session_key, msg=new_message, digestmod = hashlib.sha256).digest()[:4]
-            print(mic)
-            play_song = allocated_cid + toa_cmd_code + toa_cmd_payload + mic
-            await client.write_gatt_char(TILE_TOA_CMD_UUID, play_song)
+  async with BleakClient(address) as client:
 
-        # set up callback handle for TOA open channel RSP
-        await client.start_notify(TILE_TOA_RSP_UUID, toa_open_channel_rsp_callback)
+    async def yikes(sender, data):
+      print("yike", data)
 
-        # set parameters for TOA open channel CMD
-        cid = TOA_CONNECTIONLESS_CID.to_bytes(1, byteorder='big')
-        toa_cmd = Toa_Cmd_Code.TOA_CMD_OPEN_CHANNEL.to_bytes(1, byteorder='big')
-        
-        # issue TOA open channel CMD
-        await client.write_gatt_char(TILE_TOA_CMD_UUID, cid + sres + toa_cmd + rand_a)
+
+    async def toa_open_channel_rsp_callback(sender: int, data: bytearray):
+        global count
+
+        if len(data) == 0:
+          print("no data") # is this possible
+        else:
+          cid = data[0]
+          # connectionless
+          if cid == TOA_CONNECTIONLESS_CID:
+            token = data[1:5]
+            response = data[5:6]
+          #else:
+            
+
+        if count != 0:
+          print("count not zero data:", data)
+          return
+        print("abc", data)
+        # found in toa.h:190
+        toa_rsp = data[5:6]
+        allocated_cid = data[6:7]
+        rand_t = data[7:]
+        print(toa_rsp, allocated_cid, rand_t)
+        message = rand_a + rand_t + allocated_cid + sres
+        # only uses 16 bytes (or half of the hmac)
+        session_key = hmac.new(AUTH_KEY, msg=message, digestmod = hashlib.sha256).digest()[:16]
+        print(session_key)
+        # now write
+        toa_cmd_code = b"\x05"
+        # second byte is the number
+        # third byte is the strength 
+        toa_cmd_payload = b"\x02\04\x01"
+        # necessary for mic calculations
+        MAX_PAYLOAD_LEN = 22
+        toa_cmd_code_and_payload_len = (len(toa_cmd_code) + len(toa_cmd_payload)).to_bytes(1, byteorder='big')
+        toa_cmd_padding = (MAX_PAYLOAD_LEN - len(toa_cmd_code) - len(toa_cmd_payload)) * b"\0"
+        new_message = b"\x01" + b"\x00" * 7 + b"\x01" + toa_cmd_code_and_payload_len + toa_cmd_code + toa_cmd_payload + toa_cmd_padding 
+        mic = hmac.new(session_key, msg=new_message, digestmod = hashlib.sha256).digest()[:4]
+        print(mic)
+        play_song = allocated_cid + toa_cmd_code + toa_cmd_payload + mic
+        await client.write_gatt_char(TILE_TOA_CMD_UUID, play_song)
+        count += 1
+
+    def callback(client):
+      print("Client with address {} got disconnected!".format(client.address))
+      exit()
+
+    client.set_disconnected_callback(callback)
+    # set up callback handle for TOA open channel RSP
+    await client.start_notify(TILE_TOA_RSP_UUID, toa_open_channel_rsp_callback)
+
+    # set parameters for TOA open channel CMD
+    cid = TOA_CONNECTIONLESS_CID.to_bytes(1, byteorder='big')
+    toa_cmd = Toa_Cmd_Code.TOA_CMD_OPEN_CHANNEL.to_bytes(1, byteorder='big')
+    
+    # issue TOA open channel CMD
+    await client.write_gatt_char(TILE_TOA_CMD_UUID, cid + sres + toa_cmd + rand_a)
+
+    #while True:
+    #  await asyncio.sleep(1)
 
 asyncio.run(main(address))

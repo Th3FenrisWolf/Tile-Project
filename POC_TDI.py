@@ -4,6 +4,7 @@ from enum import Enum
 
 import hmac
 import hashlib
+import time
 
 # specifc to our tile, acquired from ble scanning and verified in disassembly
 # address = "e6:9e:55:1a:91:28"
@@ -14,6 +15,7 @@ address = "e6:9e:55:1a:91:28".upper()
 # constants defined within tile_lib.h
 TILE_TOA_CMD_UUID = "9d410018-35d6-f4dd-ba60-e7bd8dc491c0"
 TILE_TOA_RSP_UUID = "9d410019-35d6-f4dd-ba60-e7bd8dc491c0"
+TILE_TILEID_CHAR_UUID = "9d410007-35d6-f4dd-ba60-e7bd8dc491c0"
 
 # CID for TOA connectionless channel defined in toa.h:104
 TOA_CONNECTIONLESS_CID = b"\x00"
@@ -59,20 +61,32 @@ class Tdi_Cmd_Code(Enum):
 
 
 async def send_connectionless_cmd(address: str, cmd_code: Toa_Cmd_Code, payload: bytes):
+    
+    full_prcocess = time.time()
     async with BleakClient(address) as client:
+        start = time.time()
         shared_data = None
         async def yikes(sender, data):
+          print(data)
           nonlocal shared_data
           shared_data = data
           await client.stop_notify(TILE_TOA_RSP_UUID)
-    
+
+        def callback(client):
+          print("Client with address {} got disconnected!".format(client.address))
+          print("Connection time: ", time.time() - start)
+          print("Full process time: ", time.time() - full_prcocess)
+          exit()
+
+        client.set_disconnected_callback(callback)
+
         # issue TOA command
-        await client.write_gatt_char(TILE_TOA_CMD_UUID, TOA_CONNECTIONLESS_CID + SRES + cmd_code.value + payload)
-
         await client.start_notify(TILE_TOA_RSP_UUID, yikes)
+        await client.start_notify(TILE_TILEID_CHAR_UUID, yikes)
 
-        while shared_data is None:
-          await asyncio.sleep(0.1)
+        while True:
+          await asyncio.sleep(0.05)
+          # await client.write_gatt_char(TILE_TOA_CMD_UUID, TOA_CONNECTIONLESS_CID + SRES + cmd_code.value + payload)
         
         return shared_data
 
