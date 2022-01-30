@@ -92,6 +92,7 @@ async def main(address):
 
         def disconnected(client):
           print("Client was disconnected")
+          exit()
 
         client.set_disconnected_callback(disconnected)
 
