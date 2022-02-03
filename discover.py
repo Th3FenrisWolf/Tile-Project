@@ -17,14 +17,17 @@ def detection_callback(device, advertisement_data):
         if device.address not in addr_list:
             devices_found += 1
             addr_list.append(device.address)
-            print(device.address, "RSSI:", device.rssi, advertisement_data)
+            print(device)
+            #print(device.address, "Name:", device.name, "RSSI:", device.rssi, advertisement_data)
     elif device.address == search_addr:
         print("Search Device Found!")
-        print(device.address, "RSSI:", device.rssi, advertisement_data)
+        print(device)
+        #print(device.address, "Name:", device.name, "RSSI:", device.rssi, advertisement_data)
         sys.exit(0)
     else:
-        devices_found += 1
-        print("Found a device (", devices_found, ")")
+        if device.address not in addr_list:
+            devices_found += 1
+            print("Found a device (", devices_found, ")")
 
 async def main(time = 30.0, addr = None):
     args = sys.argv[1:]
@@ -35,7 +38,7 @@ async def main(time = 30.0, addr = None):
         print("Searching for all BT devices for", time, "seconds...")
     elif len(args) == 2:
         time = float(args[0])
-        addr = float(args[1])
+        addr = str(args[1])
         global search_addr
         search_addr = addr
         print("Searching for address", search_addr, "for", time, "seconds...")
