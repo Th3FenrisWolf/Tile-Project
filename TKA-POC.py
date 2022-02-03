@@ -71,12 +71,11 @@ async def main(address):
         async def tka_rsp_callback(sender: int, data: bytearray):
             print("Handling TKA, data: " + data.hex())
             # found in toa.h:190
-            toa_rsp = data[5:6]
-            allocated_cid = data[6:7]
-            rand_t = data[7:]
-            message = rand_a + rand_t + allocated_cid + sres
+            toa_rsp = data[1:2]
+            allocated_cid = data[0:1]
             # only uses 16 bytes (or half of the hmac)
             # now write
+
             toa_cmd_code = b"\x08"
             toa_cmd_payload = b"\x03"
 
@@ -86,12 +85,30 @@ async def main(address):
             MAX_PAYLOAD_LEN = 22
             toa_cmd_code_and_payload_len = (len(toa_cmd_code) + len(toa_cmd_payload)).to_bytes(1, byteorder='big')
             toa_cmd_padding = (MAX_PAYLOAD_LEN - len(toa_cmd_code) - len(toa_cmd_payload)) * b"\x00"
-            new_message = b"\x01" + b"\x00" * 7 + b"\x01" + toa_cmd_code_and_payload_len + toa_cmd_code + toa_cmd_payload + toa_cmd_padding 
+            new_message = b"\x02" + b"\x00" * 7 + b"\x01" + toa_cmd_code_and_payload_len + toa_cmd_code + toa_cmd_payload + toa_cmd_padding 
             mic = hmac.new(session_key, msg=new_message, digestmod = hashlib.sha256).digest()[:4]
             send_tka = allocated_cid + toa_cmd_code + toa_cmd_payload + mic
             await client.write_gatt_char(TILE_TOA_CMD_UUID, send_tka)
+            await ringsecondtime()
+
+        async def ringsecondtime():
+            input("kill me")
+            toa_cmd_code = b"\x05"
+            # second byte is the number
+            # third byte is the strength 
+            toa_cmd_payload = b"\x02\04\x01"
+            # necessary for mic calculations
+            MAX_PAYLOAD_LEN = 22
+            toa_cmd_code_and_payload_len = (len(toa_cmd_code) + len(toa_cmd_payload)).to_bytes(1, byteorder='big')
+            toa_cmd_padding = (MAX_PAYLOAD_LEN - len(toa_cmd_code) - len(toa_cmd_payload)) * b"\x00"
+            new_message = b"\x03" + b"\x00" * 7 + b"\x01" + toa_cmd_code_and_payload_len + toa_cmd_code + toa_cmd_payload + toa_cmd_padding 
+            mic = hmac.new(session_key, msg=new_message, digestmod = hashlib.sha256).digest()[:4]
+            play_song = b"\x02" + toa_cmd_code + toa_cmd_payload + mic
+            await client.write_gatt_char(TILE_TOA_CMD_UUID, play_song)
+
 
         async def toa_open_channel_rsp_callback(sender: int, data: bytearray):
+            print("Handling OPEN CHANNEL rsp, data: " + data.hex())
             # found in toa.h:190
             toa_rsp = data[5:6]
             allocated_cid = data[6:7]
@@ -101,6 +118,9 @@ async def main(address):
             global session_key
             session_key = hmac.new(AUTH_KEY, msg=message, digestmod = hashlib.sha256).digest()[:16]
             # now write
+            
+            # song stuff 
+
             toa_cmd_code = b"\x05"
             # second byte is the number
             # third byte is the strength 
@@ -131,6 +151,7 @@ async def main(address):
         await client.write_gatt_char(TILE_TOA_CMD_UUID, cid + sres + toa_cmd + rand_a)
 
         while True:
+          print("I'm alive")
           await asyncio.sleep(1)
 
 asyncio.run(main(address))
