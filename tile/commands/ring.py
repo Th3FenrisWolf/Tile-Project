@@ -1,4 +1,5 @@
 from enum import Enum
+from time import sleep
 from toa import Toa_Cmd_Code, send_channel_cmd
 import hashlib
 import hmac
@@ -40,17 +41,6 @@ class Songs(Enum):
 # the implicit duration is 0xfe, which appears to just play the song in its entirety
 # strength ranges from 0-3, where 0 is silent and 3 is loudest
 # according to tile_song_module.h:214
-def ring(mac_address: str, allocated_cid: bytes, session_key: bytes, song_number: bytes, strength: bytes) -> None:
-
-    toa_cmd_code: bytes = Toa_Cmd_Code.SONG.value
+async def request_ring(tile: 'Tile', song_number: bytes, strength: bytes) -> None:
     toa_cmd_payload = b"\x02" + song_number + strength
-    
-    # necessary for MIC calculations
-    MAX_PAYLOAD_LEN = 22
-    toa_cmd_code_and_payload_len = (len(toa_cmd_code) + len(toa_cmd_payload)).to_bytes(1, byteorder='big')
-    toa_cmd_padding = (MAX_PAYLOAD_LEN - len(toa_cmd_code) - len(toa_cmd_payload)) * b"\0"
-    new_message = b"\x01" + b"\x00" * 7 + b"\x01" + toa_cmd_code_and_payload_len + toa_cmd_code + toa_cmd_payload + toa_cmd_padding 
-    mic = hmac.new(session_key, msg=new_message, digestmod = hashlib.sha256).digest()[:4]
-
-    loop = asyncio.get_event_loop()
-    raw_bytes = loop.run_until_complete(send_channel_cmd(mac_address, allocated_cid, Toa_Cmd_Code.SONG, toa_cmd_payload + mic))
+    await send_channel_cmd(tile, Toa_Cmd_Code.SONG, toa_cmd_payload)
