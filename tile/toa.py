@@ -71,6 +71,7 @@ class Toa_Rsp_Code(Enum):
     ASSOCIATE     = b"\x1B"
     AUTHORIZED    = b"\x1C"
 
+# Send connectionless cmd -- necessary for channel setup and TDI commands; doesn't require auth key
 async def send_connectionless_cmd(tile: 'Tile', cmd_code: Toa_Cmd_Code, payload: bytes) -> bytes:
   data: bytes = TOA_CONNECTIONLESS_CID + tile.token + cmd_code.value + payload
   print(f"Adding {data.hex()} to the send_queue")
@@ -85,6 +86,7 @@ def get_mic_hash(session_key, nonce, direction, plaintext):
   msg = nonce + fixed_padding + direction + plaintext_len + plaintext + variable_padding
   return hmac.new(session_key, msg=msg, digestmod=sha256).digest()[:4]
 
+# Send channel cmd -- necessary for just about everything else, authenticated w/ auth key
 async def send_channel_cmd(tile: 'Tile', cmd_code: Toa_Cmd_Code, payload: bytes) -> bytes:
   await tile._session_key_created_evt.wait()
 
@@ -118,6 +120,7 @@ async def rsp_handler(tile: 'Tile', _sender: int, data: bytearray):
 def disconnected_callback(client):
     print("Client with address {} got disconnected!".format(client.address))
 
+# cmd_sender thread loop; waits for commands to be placed on the send_queue
 async def cmd_sender(tile: 'Tile'):
   print(f"Attempting to connect to {tile.mac_address}")
   async with bleak.BleakClient(tile.mac_address, timeout=20) as client:
@@ -126,5 +129,5 @@ async def cmd_sender(tile: 'Tile'):
     await client.start_notify(TILE_TOA_RSP_UUID, partial(rsp_handler, tile))
     while True:
       data: bytes = await tile.send_queue.get()
-      print(f"Attempting to send {data.hex()} to {tile.mac_address}")      
+      print(f"Attempting to send {data.hex()} to {tile.mac_address}")
       await client.write_gatt_char(TILE_TOA_CMD_UUID, data)

@@ -2,6 +2,7 @@ import asyncio
 from asyncio.windows_events import NULL
 from bleak import BleakScanner
 
+# Script by Madeline
 async def main():
     #devices = await BleakScanner.discover()
     tileUUID = "0000feed-0000-1000-8000-00805f9b34fb"
