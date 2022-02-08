@@ -2,7 +2,11 @@ import sys
 sys.path.append("/home/tile/Desktop/cedarville-2021/tile")
 from tile import Tile
 
-tile = Tile("e6:9e:55:1a:91:28")  # TDI command doesn't require a channel, so auth key isn't needed
+spare_key_mac = "E6:9E:55:1A:91:28"
+backpack_mac = "E1:5B:A3:01:A0:F1"
+toy_mac = "D1:7F:8E:E6:9E:B1"
+
+tile = Tile(spare_key_mac)  # TDI command doesn't require a channel, so auth key isn't needed
 
 # See @property decorator, store results so future references to properties that have 
 # already been used don't send unnecessary commands

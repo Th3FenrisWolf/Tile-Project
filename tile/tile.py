@@ -46,7 +46,6 @@ class Tile:
         self.token = b"\x00\x00\x00\x00"
 
         # automatically get tdi stuff
-
         async def _create_tdi_rsp_evts(self):
             self._tile_id_rsp_evt = asyncio.Event()
             self._fw_version_rsp_evt = asyncio.Event()
@@ -100,6 +99,9 @@ class Tile:
             return self._hw_version
         return self.submit_async(get_hw_version(self)).result()
 
+
+    # NOTE: This function should essentially pass everything along to ring.py, where it actually sends the command.
+    #       This functionality, however, does need to be accessible via calling Tile.ring according to CCSW
     def ring(self, song_number: bytes, strength: bytes = Strength.MEDIUM.value):
         self.submit_async(request_ring(self, song_number, strength)).result()
 
