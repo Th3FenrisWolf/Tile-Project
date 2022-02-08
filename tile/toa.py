@@ -113,7 +113,13 @@ async def rsp_handler(tile: 'Tile', _sender: int, data: bytearray):
         else:
             print(f"unhandled rsp_code: {rsp_code}")
     else:
-        print("not handling connection responses yet")
+      channel_id = rsp_data[0:1]
+      rsp_code = rsp_data[1:2]
+      rsp_payload = rsp_data[2:]
+      if rsp_code == Toa_Rsp_Code.TOFU_CTL.value:
+        from commands.tofu import handle_tofu_ctl_rsp
+        handle_tofu_ctl_rsp(tile, rsp_payload)
+      print("not handling connection responses yet")
 
 def disconnected_callback(client):
     print("Client with address {} got disconnected!".format(client.address))

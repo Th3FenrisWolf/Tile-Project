@@ -9,6 +9,8 @@ from toa import cmd_sender
 from commands.channel import request_open_channel
 from commands.tdi import *
 from commands.ring import request_ring, Strength, Songs
+from os import path
+from commands.tofu import request_tofu_ready, upload_firmware
 
 # random byte values, required as seen used in the assembly 
 sres = b"\x22" * 4
@@ -100,3 +102,18 @@ class Tile:
 
     def ring(self, song_number: bytes, strength: bytes = Strength.MEDIUM.value):
         self.submit_async(request_ring(self, song_number, strength)).result()
+
+    def send_firmware_update(self, file_path: str, firmware_version: str):
+
+        async def _create_tofu_ctl_resume_ready_rsp_evt(self):
+            self._tofu_ctl_resume_ready_rsp_evt = asyncio.Event()
+
+        self.submit_async(_create_tofu_ctl_resume_ready_rsp_evt(self)).result()
+
+        file_size = path.getsize(file_path)
+        # send tofu ctl ready
+        self.submit_async(request_tofu_ready(self, firmware_version, file_size)).result()
+        # wait for response confirmation_block_length
+
+        # start sending data 
+        self.submit_async(upload_firmware(self, file_path, file_size)).result()
