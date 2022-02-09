@@ -7,23 +7,41 @@ import sys
 # 
 # This script discovers and prints all nearby Tile Devices.
 
-addr_list = []
+madelines_earbuds = "12:34:56:00:33:E1"
+madelines_earbuds2 = "12:34:56:00:37:1D"
+
+deviceNames = ["Spare key", "wallet", "backpack", "toy"]
+deviceAddresses = ["E6:9E:55:1A:91:28", "DF:30:61:4F:AB:DA", "E1:5B:A3:01:A0:F1", "D1:7F:8E:E6:9E:B1"]
+
+exclude_list_addrs = [madelines_earbuds, madelines_earbuds2]
+found_addr_list = []
 search_addr = None
 tileUUID = "0000feed-0000-1000-8000-00805f9b34fb"
 
 def detection_callback(device, advertisement_data):
     # Whenever a device is found...
     global search_addr
-    global addr_list
+    global found_addr_list
     global tileUUID
+    global exclude_list_addrs
+    global deviceNames
+    global deviceAddresses
     if tileUUID in device.metadata["uuids"]:
         # we found a tile
         if search_addr == None:
             # if not searching for any particular tile:
-            if device.address not in addr_list:
+            # exclude devices we don't want to appear
+            if device.address not in found_addr_list:
                 # document only unique instances
-                addr_list.append(device.address)
-                print("NAME:", device.name, " ADDRESS:", device.address, " RSSI:", device.rssi, advertisement_data)
+                found_addr_list.append(device.address)
+                # note whether device found was excluded, etc.
+                if device.address in exclude_list_addrs:
+                    print("excluded device found", "(", device.name, ")")
+                elif device.address in deviceAddresses:
+                    i = deviceAddresses.index(device.address)
+                    print("Found device --<<", str(deviceNames[i]), ">>-- (Address:", device.address, ")")
+                else:
+                    print("NAME:", device.name, " ADDRESS:", device.address, " RSSI:", device.rssi, advertisement_data)
         elif device.address == search_addr:
             print("Tile of interest found!")
             print("NAME:", device.name, " ADDRESS:", device.address, " RSSI:", device.rssi, advertisement_data)
