@@ -3,7 +3,7 @@ from bleak import BleakScanner
 import sys
 
 # usage:
-# python3 findTiles.py [address] [search time]
+# python3 findTiles.py [search time] [address]
 # 
 # This script discovers and prints all nearby Tile Devices.
 
@@ -48,19 +48,18 @@ def detection_callback(device, advertisement_data):
             # since we found what we're looking for, exit
             sys.exit(0)
 
-async def main(addr = None, time = 30.0):
+async def main(addr = None, time = 60.0):
     args = sys.argv[1:]
     global search_addr
     if len(args) == 0:
-        print("Searching for all Tiles for", time, "seconds...")
+        print("Searching for all Tile devices for", time, "seconds...")
     elif len(args) == 1:
-        addr = args[0]
-        search_addr = addr
-        print("Searching for Tile w/ address", search_addr, "for", time, "seconds...")
+        time = float(args[0])
+        print("Searching for all Tile devices for", time, "seconds...")
     elif len(args) == 2:
-        addr = args[0]
+        time = float(args[0])
+        addr = str(args[1])
         search_addr = addr
-        time = float(args[1])
         print("Searching for Tile w/ address", search_addr, "for", time, "seconds...")    
     scanner = BleakScanner()
     scanner.register_detection_callback(detection_callback)
