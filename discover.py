@@ -49,16 +49,11 @@ def get_manufacturer_name(device) -> str:
         if "manufacturer_data" in device.metadata:
             ks = list(device.metadata["manufacturer_data"].keys())
             if len(ks):
-                mf = MANUFACTURERS.get(ks[0], MANUFACTURERS.get(0xFFFF))
-                if not mf :
-                    return "Unknown"
-                else :
-                    return str(mf)
+                return str(MANUFACTURERS.get(ks[0], MANUFACTURERS.get(0xFFFF)))
     elif device.metadata :
         if "0000feed-0000-1000-8000-00805f9b34fb" in device.metadata["uuids"] :
-            return "Tile Enabled Device "
-    else :
-        return "Unknown Manufacturer,"
+            return "Tile Enabled Device"
+    return "Unknown Manufacturer,"
 
 def detection_callback(device, advertisement_data):
     # Whenever a device is found...
