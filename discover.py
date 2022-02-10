@@ -1,5 +1,6 @@
 import asyncio
 from bleak import BleakScanner
+from manufacturers import MANUFACTURERS
 from enum import Enum
 import sys
 
@@ -24,18 +25,38 @@ class Display_Attributes(Enum):
 def print_device_data(device, advertisement_data):
     info = ""
     if Display_Attributes.NAME.value == True:
-        info += ("Name: " + str(device.name) + " ")
+        #if no name, print manufacturer name
+        if device.name == None:
+            info += (get_manufacturer_name(device) + "  ")
+        else:
+            info += ("Name: " + str(device.name) + "  ")
     if Display_Attributes.ADDRESS.value == True:
-        info += ("Address: " + str(device.address) + " ")
+        info += ("Address: " + str(device.address) + "  ")
     if Display_Attributes.RSSI.value == True:
-        info += ("RSSI: " + str(device.rssi) + " ")
+        info += ("RSSI: " + str(device.rssi) + "  ")
     if Display_Attributes.METADATA.value == True:
-        info += ("Metadata: " + str(device.metadata) + " ")
+        info += ("Metadata: " + str(device.metadata) + "  ")
     if Display_Attributes.UUIDS.value == True:
-        info += ("UUID(s): " + str(device.metadata["uuids"]) + " ")
+        info += ("UUID(s): " + str(device.metadata["uuids"]) + "  ")
     if Display_Attributes.ADVERTISEMENT_DATA.value == True:
         info += (str(advertisement_data))
     print(info)
+
+# I pretty much just stole this method from bleak:
+# https://bleak.readthedocs.io/en/latest/_modules/bleak/backends/device.html
+def get_manufacturer_name(device) -> str:
+    if "0000feed-0000-1000-8000-00805f9b34fb" in device.metadata["uuids"] :
+        return "Tile Enabled Device "
+    if not device.name:
+        if "manufacturer_data" in device.metadata:
+            ks = list(device.metadata["manufacturer_data"].keys())
+            if len(ks):
+                mf = MANUFACTURERS.get(ks[0], MANUFACTURERS.get(0xFFFF))
+                if not mf :
+                    return "Unknown"
+                else :
+                    return str(mf)
+    return "Unknown Manufacturer,"
 
 def detection_callback(device, advertisement_data):
     # Whenever a device is found...
@@ -52,7 +73,8 @@ def detection_callback(device, advertisement_data):
     elif device.address == search_addr:
         # if we found the device we're looking for
         print("Search Device Found!")
-        print(device, advertisement_data)
+        print_device_data(device, advertisement_data)
+        print(advertisement_data)
         # since we found what we're looking for, exit
         sys.exit(0)
     else:
@@ -61,7 +83,7 @@ def detection_callback(device, advertisement_data):
         if device.address not in addr_list:
             addr_list.append(device.address)
             devices_found += 1
-            print("Found a device (", devices_found, ")")
+            print("Found a device (" + str(devices_found) + ")")
 
 async def main(time = 60.0, addr = None):
     global devices_found
