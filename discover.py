@@ -27,7 +27,7 @@ def print_device_data(device, advertisement_data):
     info = ""
     if Display_Attributes.NAME.value == True:
         #if no name, print manufacturer name
-        if device.name == None or device.name[:2] == device.address[:2]:
+        if device.name == "" or device.name[:2] == device.address[:2]:
             info += (get_manufacturer_name(device) + "  ")
         else:
             info += ("Name: " + str(device.name) + "  ")
