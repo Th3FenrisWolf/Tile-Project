@@ -1,8 +1,8 @@
 import asyncio
 from bleak import BleakScanner
+import sys
 from manufacturers import MANUFACTURERS
 from enum import Enum
-import sys
 
 # usage:
 # python3 discover.py [search time] [address]
