@@ -1,5 +1,4 @@
 import asyncio
-from pickle import TRUE
 from bleak import BleakScanner
 from enum import Enum
 import sys
