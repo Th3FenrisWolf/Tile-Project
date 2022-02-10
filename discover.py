@@ -19,6 +19,7 @@ class Display_Attributes(Enum):
     ADDRESS = True
     METADATA = False # a lot of redundant information
     RSSI = True
+    INTERPRET_RSSI = True # - displays connection strength
     UUIDS = False
     ADVERTISEMENT_DATA = False
 
@@ -33,7 +34,14 @@ def print_device_data(device, advertisement_data):
     if Display_Attributes.ADDRESS.value == True:
         info += ("Address: " + str(device.address) + "  ")
     if Display_Attributes.RSSI.value == True:
-        info += ("RSSI: " + str(device.rssi) + "  ")
+        info += ("RSSI: " + str(device.rssi) + " ")
+        if Display_Attributes.INTERPRET_RSSI.value == True:
+            if int(device.rssi) > -50:
+                info += "(Strong Connection) "
+            elif int(device.rssi) > -70:
+                info += "(Moderate Connection) "
+            elif int(device.rssi) < -69:
+                info += "(Weak connection) "
     if Display_Attributes.METADATA.value == True:
         info += ("Metadata: " + str(device.metadata) + "  ")
     if Display_Attributes.UUIDS.value == True:

@@ -22,14 +22,15 @@ tiles_found = 0
 
 # Label things true or false depending on what information you want to see:
 class Display_Attributes(Enum):
-    NAME = True
+    NAME = False # tiles generally don't have names, only 3rd party tile-equipped devices
     ADDRESS = True
     METADATA = False # a lot of redundant information
     RSSI = True
+    INTERPRET_RSSI = True # - displays connection strength
     UUIDS = False
     ADVERTISEMENT_DATA = False
 
-def print_device_data(device, advertisement_data):
+def get_device_data(device, advertisement_data) -> str:
     info = ""
     if Display_Attributes.NAME.value == True:
         info += ("Name: " + str(device.name) + " ")
@@ -37,13 +38,20 @@ def print_device_data(device, advertisement_data):
         info += ("Address: " + str(device.address) + " ")
     if Display_Attributes.RSSI.value == True:
         info += ("RSSI: " + str(device.rssi) + " ")
+        if Display_Attributes.INTERPRET_RSSI.value == True:
+            if int(device.rssi) > -50:
+                info += "(Strong Connection) "
+            elif int(device.rssi) > -70:
+                info += "(Moderate Connection) "
+            elif int(device.rssi) < -69:
+                info += "(Weak connection) "
     if Display_Attributes.METADATA.value == True:
         info += ("Metadata: " + str(device.metadata) + " ")
     if Display_Attributes.UUIDS.value == True:
         info += ("UUID(s): " + str(device.metadata["uuids"]) + " ")
     if Display_Attributes.ADVERTISEMENT_DATA.value == True:
         info += (str(advertisement_data))
-    print(info)
+    return info
 
 def detection_callback(device, advertisement_data):
     # Whenever a device is found...
@@ -56,12 +64,12 @@ def detection_callback(device, advertisement_data):
     global tiles_found
     if tileUUID in device.metadata["uuids"]:
         # we found a tile
-        tiles_found += 1
         if search_addr == None:
             # if not searching for any particular tile:
             # exclude devices we don't want to appear
             if device.address not in found_addr_list:
                 # document only unique instances
+                tiles_found += 1
                 found_addr_list.append(device.address)
                 # if device is excluded...
                 if device.address in exclude_list_addrs:
@@ -69,14 +77,12 @@ def detection_callback(device, advertisement_data):
                 # if device is known...
                 elif device.address in known_device_addresses:
                     i = known_device_addresses.index(device.address)
-                    print("Found device --<<", str(known_device_names[i]), ">>--")
-                    print_device_data(device, advertisement_data)
+                    print("Found known device --<<", str(known_device_names[i]), ">>--", get_device_data(device, advertisement_data))
                 # otherwise just print
                 else:
-                    print_device_data(device, advertisement_data)
+                    print("Found unknown Tile (or Tile-equipped device) --", get_device_data(device, advertisement_data))
         elif device.address == search_addr:
-            print("Tile of interest found!")
-            print_device_data(device, advertisement_data)
+            print("Tile of interest found! --", get_device_data(device, advertisement_data))
             # since we found what we're looking for, exit
             sys.exit(0)
 
