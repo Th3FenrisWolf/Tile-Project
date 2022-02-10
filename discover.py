@@ -11,6 +11,11 @@ devices_found = 0
 addr_list = []
 search_addr = None
 
+#class Display_Attributes
+
+#def print_device_data(device):
+
+
 def detection_callback(device, advertisement_data):
     # Whenever a device is found...
     global search_addr
@@ -23,7 +28,7 @@ def detection_callback(device, advertisement_data):
             devices_found += 1
             addr_list.append(device.address)
             # print device info
-            print(device)
+            print(device, "(RSSI:", device.rssi, ")")
             # potentially, we could print whatever we want instead of just print(device)
             #print(device.address, "Name:", device.name, "RSSI:", device.rssi, advertisement_data)
     elif device.address == search_addr:
@@ -41,7 +46,8 @@ def detection_callback(device, advertisement_data):
             devices_found += 1
             print("Found a device (", devices_found, ")")
 
-async def main(time = 30.0, addr = None):
+async def main(time = 60.0, addr = None):
+    global devices_found
     args = sys.argv[1:]
     if len(args) == 0:
         print("Searching for all BT devices for", time, "seconds...")
@@ -60,5 +66,6 @@ async def main(time = 30.0, addr = None):
     await scanner.start()
     await asyncio.sleep(time)
     await scanner.stop()
+    print("Total BT devices found:", str(devices_found))
 
 asyncio.run(main())
