@@ -1,4 +1,5 @@
 from toa import Toa_Cmd_Code, send_channel_cmd
+from enum import Enum
 
 # CMD
 

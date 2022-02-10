@@ -52,13 +52,14 @@ def detection_callback(device, advertisement_data):
     elif device.address == search_addr:
         # if we found the device we're looking for
         print("Search Device Found!")
-        print_device_data(device, advertisement_data)
+        print(device, advertisement_data)
         # since we found what we're looking for, exit
         sys.exit(0)
     else:
         # if we found a device, but it wasn't the one we are looking for
         # just to show the user that the script is working
         if device.address not in addr_list:
+            addr_list.append(device.address)
             devices_found += 1
             print("Found a device (", devices_found, ")")
 
