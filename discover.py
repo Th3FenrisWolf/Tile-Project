@@ -26,7 +26,7 @@ def print_device_data(device, advertisement_data):
     info = ""
     if Display_Attributes.NAME.value == True:
         #if no name, print manufacturer name
-        if device.name == None:
+        if device.name == None or device.name[:2] == device.address[:2]:
             info += (get_manufacturer_name(device) + "  ")
         else:
             info += ("Name: " + str(device.name) + "  ")
@@ -45,8 +45,6 @@ def print_device_data(device, advertisement_data):
 # I pretty much just stole this method from bleak:
 # https://bleak.readthedocs.io/en/latest/_modules/bleak/backends/device.html
 def get_manufacturer_name(device) -> str:
-    if "0000feed-0000-1000-8000-00805f9b34fb" in device.metadata["uuids"] :
-        return "Tile Enabled Device "
     if not device.name:
         if "manufacturer_data" in device.metadata:
             ks = list(device.metadata["manufacturer_data"].keys())
@@ -56,7 +54,11 @@ def get_manufacturer_name(device) -> str:
                     return "Unknown"
                 else :
                     return str(mf)
-    return "Unknown Manufacturer,"
+    elif device.metadata :
+        if "0000feed-0000-1000-8000-00805f9b34fb" in device.metadata["uuids"] :
+            return "Tile Enabled Device "
+    else :
+        return "Unknown Manufacturer,"
 
 def detection_callback(device, advertisement_data):
     # Whenever a device is found...
