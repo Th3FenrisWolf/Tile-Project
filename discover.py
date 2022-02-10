@@ -1,5 +1,7 @@
 import asyncio
+from pickle import TRUE
 from bleak import BleakScanner
+from enum import Enum
 import sys
 
 # usage:
@@ -11,10 +13,30 @@ devices_found = 0
 addr_list = []
 search_addr = None
 
-#class Display_Attributes
+# Label things true or false depending on what information you want to see:
+class Display_Attributes(Enum):
+    NAME = True
+    ADDRESS = True
+    METADATA = False # a lot of redundant information
+    RSSI = True
+    UUIDS = False
+    ADVERTISEMENT_DATA = False
 
-#def print_device_data(device):
-
+def print_device_data(device, advertisement_data):
+    info = ""
+    if Display_Attributes.NAME.value == True:
+        info += ("Name: " + str(device.name) + " ")
+    if Display_Attributes.ADDRESS.value == True:
+        info += ("Address: " + str(device.address) + " ")
+    if Display_Attributes.RSSI.value == True:
+        info += ("RSSI: " + str(device.rssi) + " ")
+    if Display_Attributes.METADATA.value == True:
+        info += ("Metadata: " + str(device.metadata) + " ")
+    if Display_Attributes.UUIDS.value == True:
+        info += ("UUID(s): " + str(device.metadata["uuids"]) + " ")
+    if Display_Attributes.ADVERTISEMENT_DATA.value == True:
+        info += (str(advertisement_data))
+    print(info)
 
 def detection_callback(device, advertisement_data):
     # Whenever a device is found...
@@ -27,16 +49,11 @@ def detection_callback(device, advertisement_data):
             # find and document only unique instances
             devices_found += 1
             addr_list.append(device.address)
-            # print device info
-            print(device, "(RSSI:", device.rssi, ")")
-            # potentially, we could print whatever we want instead of just print(device)
-            #print(device.address, "Name:", device.name, "RSSI:", device.rssi, advertisement_data)
+            print_device_data(device, advertisement_data)
     elif device.address == search_addr:
         # if we found the device we're looking for
         print("Search Device Found!")
-        print(device)
-        # see comment above -- change to your needs
-        #print(device.address, "Name:", device.name, "RSSI:", device.rssi, advertisement_data)
+        print_device_data(device, advertisement_data)
         # since we found what we're looking for, exit
         sys.exit(0)
     else:
