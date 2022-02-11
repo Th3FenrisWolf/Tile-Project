@@ -3,14 +3,17 @@ from functools import cached_property
 from hashlib import sha256
 from queue import Queue
 import asyncio
+from re import A
 import threading
 from time import sleep
-from toa import cmd_sender
+from toa import cmd_sender, send_channel_cmd
 from commands.channel import request_open_channel
 from commands.tdi import *
 from commands.ring import request_ring, Strength, Songs
 from os import path
 from commands.tofu import request_tofu_ready, upload_firmware
+import sys
+import time
 
 # random byte values, required as seen used in the assembly 
 sres = b"\x22" * 4
@@ -18,18 +21,21 @@ sres = b"\x22" * 4
 class Tile:
 
     # https://stackoverflow.com/questions/63858511/using-threads-in-combination-with-asyncio
-    @staticmethod
-    def _start_async():
-        loop = asyncio.new_event_loop()
-        threading.Thread(target=loop.run_forever).start()
-        return loop
+    def _start_async(self):
+        self._loop  = asyncio.new_event_loop()
+        self._loop_thread = threading.Thread(target=self._loop.run_forever)
+        self._loop_thread.start()
 
     def submit_async(self, awaitable):
         return asyncio.run_coroutine_threadsafe(awaitable, self._loop)
 
     def __init__(self, mac_address: str, auth_key: bytes = None):
 
-        self._loop = self._start_async()
+        self._start_async()
+
+        self._thread_ended = False
+
+        self._cmd_sender_ended = False
         
         self.auth_key = auth_key
         # bleak seems to require uppercase str, so this will catch if someone gave lowercase form
@@ -40,7 +46,7 @@ class Tile:
         self.submit_async(set_queue(self)).result()
 
         # coroutine that runs forever
-        self.submit_async(cmd_sender(self))
+        self._cmd_sender_future = self.submit_async(cmd_sender(self))
 
         # 4 random bytes used in session_key generation
         self.token = b"\x00\x00\x00\x00"
@@ -66,10 +72,6 @@ class Tile:
 
         # loop = asyncio.get_event_loop()
         # loop.run_until_complete(open_channel(self.send_queue, self.rand_a))
-
-    def __del__(self):
-        # stop async loop
-        self._loop.call_soon_threadsafe(self._loop.stop)
 
     @cached_property
     def tile_id(self) -> str:
@@ -113,9 +115,36 @@ class Tile:
         self.submit_async(_create_tofu_ctl_resume_ready_rsp_evt(self)).result()
 
         file_size = path.getsize(file_path)
-        # send tofu ctl ready
+        
+        # # send tofu ctl ready
         self.submit_async(request_tofu_ready(self, firmware_version, file_size)).result()
         # wait for response confirmation_block_length
 
         # start sending data 
         self.submit_async(upload_firmware(self, file_path, file_size)).result()
+
+    def disconnect(self):
+        # close channel if channel has been established
+        if self.auth_key is not None:
+            self.submit_async(send_channel_cmd(self, Toa_Cmd_Code.CLOSE_CHANNEL, b"")).result()
+        
+        # shut down the threads
+        print("thread_ended setting to true")
+        self._thread_ended = True
+
+        print("waiting for cmd_sender to end")
+        self._cmd_sender_future.result()
+
+        self._loop.call_soon_threadsafe(self._loop.stop)
+
+        # necessary sleep, so that loop stops before closing
+        sleep(0.1)
+
+        self._loop.call_soon_threadsafe(self._loop.close)
+
+        print("Waiting for thread")
+        self._loop_thread.join()
+
+        print("Closed the channel - disconnected now!")
+
+        sys.exit()

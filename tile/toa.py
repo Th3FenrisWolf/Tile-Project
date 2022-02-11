@@ -131,12 +131,19 @@ def disconnected_callback(client):
 
 # cmd_sender thread loop; waits for commands to be placed on the send_queue
 async def cmd_sender(tile: 'Tile'):
-  print(f"Attempting to connect to {tile.mac_address}")
-  async with bleak.BleakClient(tile.mac_address, timeout=20) as client:
-    print(f"Successfully connected to {tile.mac_address}")
-    client.set_disconnected_callback(disconnected_callback)
-    await client.start_notify(TILE_TOA_RSP_UUID, partial(rsp_handler, tile))
-    while True:
-      data: bytes = await tile.send_queue.get()
-      print(f"Attempting to send {data.hex()} to {tile.mac_address}")
-      await client.write_gatt_char(TILE_TOA_CMD_UUID, data)
+  while True:
+    try:
+      print(f"Attempting to connect to {tile.mac_address}")
+      async with bleak.BleakClient(tile.mac_address, timeout=15) as client:
+        print(f"Successfully connected to {tile.mac_address}")
+        client.set_disconnected_callback(disconnected_callback)
+        await client.start_notify(TILE_TOA_RSP_UUID, partial(rsp_handler, tile))
+        while True:
+          if tile.send_queue.empty() and tile._thread_ended:
+            print("will break now and close the threads?")
+            return
+          data: bytes = await tile.send_queue.get()
+          print(f"Attempting to send {data.hex()} to {tile.mac_address}")
+          await client.write_gatt_char(TILE_TOA_CMD_UUID, data)
+    except Exception as e:
+      print(e)
