@@ -146,5 +146,3 @@ class Tile:
         self._loop_thread.join()
 
         print("Closed the channel - disconnected now!")
-
-        sys.exit()
