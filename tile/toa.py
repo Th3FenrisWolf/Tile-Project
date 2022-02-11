@@ -121,6 +121,9 @@ async def rsp_handler(tile: 'Tile', _sender: int, data: bytearray):
       if rsp_code == Toa_Rsp_Code.TOFU_CTL.value:
         from commands.tofu import handle_tofu_ctl_rsp
         handle_tofu_ctl_rsp(tile, rsp_payload)
+      elif rsp_code == Toa_Rsp_Code.TKA.value:
+        from commands.tka import handle_tka_rsp
+        await handle_tka_rsp(tile, rsp_payload)
       print("not handling connection responses yet")
 
 def disconnected_callback(client):
