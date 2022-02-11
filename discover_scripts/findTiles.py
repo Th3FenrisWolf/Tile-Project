@@ -45,10 +45,12 @@ def get_device_data(device, advertisement_data) -> str:
                 info += "(Moderate Connection) "
             elif int(device.rssi) < -69:
                 info += "(Weak connection) "
-    if Display_Attributes.METADATA.value == True:
-        info += ("Metadata: " + str(device.metadata) + " ")
-    if Display_Attributes.UUIDS.value == True:
-        info += ("UUID(s): " + str(device.metadata["uuids"]) + " ")
+    # fix null metadata on Linux machines...
+    if device.metadata:
+        if Display_Attributes.METADATA.value == True:
+            info += ("Metadata: " + str(device.metadata) + " ")
+        if Display_Attributes.UUIDS.value == True:
+            info += ("UUID(s): " + str(device.metadata["uuids"]) + " ")
     if Display_Attributes.ADVERTISEMENT_DATA.value == True:
         info += (str(advertisement_data))
     return info
