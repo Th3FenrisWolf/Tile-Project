@@ -1,3 +1,4 @@
+from io import BytesIO
 from toa import Toa_Cmd_Code, send_channel_cmd
 from enum import Enum
 
@@ -12,7 +13,7 @@ async def request_tofu_ready(tile: 'Tile', firmware_version: str, img_len: int):
 
     assert (len(firmware_version) == 10 ), "Firmware version str must be 10 bytes!"
 
-    payload = Tofu_Ctl_Cmd.RESUME + firmware_version.encode() + img_len.to_bytes(3, "little")
+    payload = Tofu_Ctl_Cmd.RESUME.value + firmware_version.encode() + img_len.to_bytes(3, "little")
     await send_channel_cmd(tile, Toa_Cmd_Code.TOFU_CTL, payload)
 
 
@@ -26,7 +27,7 @@ class Tofu_Ctl_Rsp(Enum):
     BLOCK_OK     = b"\x02"
     IMAGE_OK     = b"\x03"
     EXIT_OK      = b"\x04"
-    ERROR        = b"\x20"
+    ERROR        = b"\x20" 
 
 
 def handle_tofu_ctl_rsp(tile: 'Tile', rsp_payload: bytes):
@@ -36,23 +37,26 @@ def handle_tofu_ctl_rsp(tile: 'Tile', rsp_payload: bytes):
         tile._image_index = int.from_bytes(rsp_payload[5:9], byteorder="little")
         tile._tofu_ctl_resume_ready_rsp_evt.set()
 
-def upload_firmware(tile: 'Tile', file_path: str, file_size: int):
+async def upload_firmware(tile: 'Tile', file_path: str, file_size: int):
     # ensure that the resume ready rsp has been gotten
-    tile._tofu_ctl_resume_ready_rsp_evt.wait()
+    await tile._tofu_ctl_resume_ready_rsp_evt.wait()
 
-  # bytes (20 - mic (4) - channel_id (1) - cmd_code (1))
+    # bytes (20 - mic (4) - channel_id (1) - cmd_code (1))
     MAX_DATA_PAYLOAD = 14
 
-    bytes_left_to_write = file_size
-
-    with open(file_path) as f:
-        block = f.read(tile._block_length if bytes_left_to_write > tile._block_length else bytes_left_to_write)
-        for packet in range(len(block) / MAX_DATA_PAYLOAD):
-            send_channel_cmd(tile, Tofu_Ctl_Cmd.DATA, packet)
+    with open(file_path, "rb") as f:
+        block_num = 0
+        while len(block := f.read(tile._block_length)):
+            block_io = BytesIO(block)
+            while len(packet := block_io.read(MAX_DATA_PAYLOAD)):
+                await send_channel_cmd(tile, Tofu_Ctl_Cmd.DATA, packet)
+            print(f"--------------------{block_num}------------------")
+            block_num += 1
+                
         #assuming that it'll correctly read the block and split it up correctly 
         #await handle_tofu_ctl_rsp(tile, Tofu_Ctl_Rsp.BLOCK_OK)
-            
 
+        #might need to see if the channel closes/terminates otherwise it might just be continuously waiting for a command that will never come
 
 
 
