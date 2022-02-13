@@ -1,6 +1,7 @@
 from io import BytesIO
 from toa import Toa_Cmd_Code, send_channel_cmd
 from enum import Enum
+import asyncio
 
 # CMD
 
@@ -47,11 +48,15 @@ async def upload_firmware(tile: 'Tile', file_path: str, file_size: int):
     with open(file_path, "rb") as f:
         block_num = 0
         while len(block := f.read(tile._block_length)):
+            print(f"--------------------{block_num}------------------")
             block_io = BytesIO(block)
             while len(packet := block_io.read(MAX_DATA_PAYLOAD)):
-                await send_channel_cmd(tile, Tofu_Ctl_Cmd.DATA, packet)
-            print(f"--------------------{block_num}------------------")
+                await send_channel_cmd(tile, Toa_Cmd_Code.TOFU_DATA, packet)
+            # sent block number
             block_num += 1
+            # wait for response from tile
+            await asyncio.sleep(30)
+            break
                 
         #assuming that it'll correctly read the block and split it up correctly 
         #await handle_tofu_ctl_rsp(tile, Tofu_Ctl_Rsp.BLOCK_OK)
