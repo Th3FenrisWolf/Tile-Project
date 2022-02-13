@@ -104,7 +104,6 @@ def detection_callback(device, advertisement_data):
     global search_addr
     global found_addr_list
     global tileUUID
-    global excluded_devices
     global known_devices
     global tiles_found
     if tileUUID in device.metadata["uuids"]:
