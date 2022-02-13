@@ -10,9 +10,9 @@ import sys
 
 known_devices = {
     "Spare key":            "E6:9E:55:1A:91:28",
-    "wallet":               "DF:30:61:4F:AB:DA",
-    "backpack":             "E1:5B:A3:01:A0:F1",
-    "toy":                  "D1:7F:8E:E6:9E:B1",
+    "Wallet":               "DF:30:61:4F:AB:DA",
+    "Backpack":             "E1:5B:A3:01:A0:F1",
+    "Toy":                  "D1:7F:8E:E6:9E:B1",
     "madelines_earbud1":    "12:34:56:00:33:E1", 
     "madelines_earbud2":    "12:34:56:00:37:1D"
 }
@@ -115,9 +115,9 @@ def detection_callback(device, advertisement_data):
                 # document only unique instances
                 tiles_found += 1
                 found_addr_list.append(device.address)
-                # if device is known...
+                # if device is known, give it a meaningful name
                 if device.address in known_devices.values():
-                    device.name = known_devices[get_key(device.address, known_devices)]
+                    device.name = get_key(device.address, known_devices)
                     print(get_device_data(device, advertisement_data))
                 # otherwise just print
                 else:
