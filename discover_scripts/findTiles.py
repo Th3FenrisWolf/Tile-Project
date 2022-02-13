@@ -8,13 +8,17 @@ import sys
 # 
 # This script discovers and prints all nearby Tile Devices.
 
-known_device_names = ["Spare key", "wallet", "backpack", "toy"]
-known_device_addresses = ["E6:9E:55:1A:91:28", "DF:30:61:4F:AB:DA", "E1:5B:A3:01:A0:F1", "D1:7F:8E:E6:9E:B1"]
+known_devices = {
+    "Spare key":    "E6:9E:55:1A:91:28",
+    "wallet":       "DF:30:61:4F:AB:DA",
+    "backpack":     "E1:5B:A3:01:A0:F1",
+    "toy":          "D1:7F:8E:E6:9E:B1"
+}
+excluded_devices = {
+    "madelines_earbud1": "12:34:56:00:33:E1", 
+    "madelines_earbud2": "12:34:56:00:37:1D"
+}
 
-madelines_earbuds = "12:34:56:00:33:E1"
-madelines_earbuds2 = "12:34:56:00:37:1D"
-
-exclude_list_addrs = [madelines_earbuds, madelines_earbuds2]
 found_addr_list = []
 search_addr = None
 tileUUID = "0000feed-0000-1000-8000-00805f9b34fb"
@@ -29,6 +33,13 @@ class Display_Attributes(Enum):
     INTERPRET_RSSI = True # - displays connection strength
     UUIDS = False
     ADVERTISEMENT_DATA = False
+
+# function to return key for any value
+def get_key(val, dict) -> str:
+    for key, value in dict.items():
+        if val == value:
+            return key
+    return "no key found"
 
 def get_device_data(device, advertisement_data) -> str:
     info = ""
@@ -60,9 +71,8 @@ def detection_callback(device, advertisement_data):
     global search_addr
     global found_addr_list
     global tileUUID
-    global exclude_list_addrs
-    global known_device_names
-    global known_device_addresses
+    global excluded_devices
+    global known_devices
     global tiles_found
     if tileUUID in device.metadata["uuids"]:
         # we found a tile
@@ -74,12 +84,13 @@ def detection_callback(device, advertisement_data):
                 tiles_found += 1
                 found_addr_list.append(device.address)
                 # if device is excluded...
-                if device.address in exclude_list_addrs:
-                    print("excluded device found", "(", device.name, ")")
+                if device.address in excluded_devices.values:
+                    device_name = excluded_devices[get_key(device.address, known_devices)]
+                    print("excluded device found (" + str(device_name) + ")")
                 # if device is known...
-                elif device.address in known_device_addresses:
-                    i = known_device_addresses.index(device.address)
-                    print("Found known device --<<", str(known_device_names[i]), ">>--", get_device_data(device, advertisement_data))
+                elif device.address in known_devices.values():
+                    device_name = known_devices[get_key(device.address, known_devices)]
+                    print("Found known device --<<", str(device_name), ">>--", get_device_data(device, advertisement_data))
                 # otherwise just print
                 else:
                     print("Found unknown Tile (or Tile-equipped device) --", get_device_data(device, advertisement_data))
