@@ -91,16 +91,14 @@ def print_device_data(device, advertisement_data):
     if Display_Attributes.ADDRESS.value == True:
         info += device.address + "  "
     if Display_Attributes.RSSI.value == True:
-        
+        info += str(device.rssi) + " "
         if Display_Attributes.INTERPRET_RSSI.value == True:
             if int(device.rssi) > -50:
-                info += pad("\u001b[32mStrong\u001b[0m", Pad_Lengths.INTERPRET_RSSI.value)
+                info += pad("\u001b[32mStrong\u001b[0m", Pad_Lengths.INTERPRET_RSSI.value - 3)
             elif int(device.rssi) > -70:
-                info += pad("\u001b[33mModerate\u001b[0m", Pad_Lengths.INTERPRET_RSSI.value)
+                info += pad("\u001b[33mModerate\u001b[0m", Pad_Lengths.INTERPRET_RSSI.value - 3)
             elif int(device.rssi) < -69:
-                info += pad("\u001b[31mWeak\u001b[0m", Pad_Lengths.INTERPRET_RSSI.value)
-        else:
-            info += str(device.rssi) + " "
+                info += pad("\u001b[31mWeak\u001b[0m", Pad_Lengths.INTERPRET_RSSI.value - 3)
     if Display_Attributes.METADATA.value == True:
         info += str(device.metadata) + "  "
     if Display_Attributes.UUIDS.value == True:
