@@ -45,9 +45,6 @@ class Tile:
             self.send_queue = asyncio.Queue()
         self.submit_async(set_queue(self)).result()
 
-        # coroutine that runs forever
-        self._cmd_sender_future = self.submit_async(cmd_sender(self))
-
         # 4 random bytes used in session_key generation
         self.token = b"\x00\x00\x00\x00"
 
@@ -69,9 +66,17 @@ class Tile:
 
             self.submit_async(_create_session_key_created_evt(self)).result()
             self.submit_async(request_open_channel(self)).result()
+        else:
+            self._thread_ended = True
 
-        # loop = asyncio.get_event_loop()
-        # loop.run_until_complete(open_channel(self.send_queue, self.rand_a))
+         # coroutine that runs forever
+        self._cmd_sender_future = self.submit_async(cmd_sender(self))
+
+        # wait for open channel to complete before returning
+        if self.auth_key is not None:
+            async def wait_open_channel(self):
+                await self._session_key_created_evt.wait()
+            self.submit_async(wait_open_channel(self)).result()
 
     @cached_property
     def tile_id(self) -> str:
@@ -116,7 +121,7 @@ class Tile:
 
         file_size = path.getsize(file_path)
         
-        # # send tofu ctl ready
+        # send tofu ctl ready
         self.submit_async(request_tofu_ready(self, firmware_version, file_size)).result()
         # wait for response confirmation_block_length
 
@@ -127,10 +132,9 @@ class Tile:
         # close channel if channel has been established
         if self.auth_key is not None:
             self.submit_async(send_channel_cmd(self, Toa_Cmd_Code.CLOSE_CHANNEL, b"")).result()
-        
-        # shut down the threads
-        print("thread_ended setting to true")
-        self._thread_ended = True
+            # shut down the thread
+            print("thread_ended setting to true")
+            self._thread_ended = True
 
         print("waiting for cmd_sender to end")
         self._cmd_sender_future.result()
