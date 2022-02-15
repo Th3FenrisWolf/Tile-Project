@@ -7,6 +7,12 @@ import sys
 # python3 findTiles.py [search time] [address]
 # 
 # This script discovers and prints all nearby Tile Devices.
+# to find all nearby (defaults to 60 second scan):
+#   python3 findTiles.py
+# to find all nearby for 2 minutes:
+#   python3 findTiles 120
+# to find specifically the Tile with address E6:9E:55:1A:91:28:
+#   python3 findTiles 60 E6:9E:55:1A:91:28
 # 
 # After finding your relevant Tile(s), we recommend putting its MAC into
 #   /scripts/tile_info.py -- this will allow you to get the Tile ID & firmware
