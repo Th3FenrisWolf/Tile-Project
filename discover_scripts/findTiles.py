@@ -7,13 +7,19 @@ import sys
 # python3 findTiles.py [search time] [address]
 # 
 # This script discovers and prints all nearby Tile Devices.
+# 
+# After finding your relevant Tile(s), we recommend putting its MAC into
+#   /scripts/tile_info.py -- this will allow you to get the Tile ID & firmware
+#   We have identified that any firmware after 25.04.06.0 randomizes its MAC address
+#   about every ~ 10-30 minutes
 
 known_devices = {
+    # Change this dictionary to your own devices and known MAC addresses as you find them
     "Spare key":            "E6:9E:55:1A:91:28",
     "Wallet":               "DF:30:61:4F:AB:DA",
     "Backpack":             "E1:5B:A3:01:A0:F1",
     "Toy":                  "D1:7F:8E:E6:9E:B1",
-    "madelines_earbud1":    "12:34:56:00:33:E1", 
+    "madelines_earbud1":    "12:34:56:00:33:E1",
     "madelines_earbud2":    "12:34:56:00:37:1D"
 }
 
@@ -27,24 +33,24 @@ class Display_Attributes(Enum):
     DEVICE_NUM = True
     NAME = True
     ADDRESS = True
-    METADATA = False # a lot of redundant information
-    RSSI = True
-    INTERPRET_RSSI = True # - displays connection strength - RSSI must be on to work
+    METADATA = False  # a lot of redundant information
+    RSSI = True  # recommended to leave on
+    INTERPRET_RSSI = True  # - displays connection strength - RSSI must be on to work
     UUIDS = False
     ADVERTISEMENT_DATA = False
 
 class Pad_Lengths(Enum):
     DEVICE_NUM = 4
-    NAME = 20
+    NAME = 20   # <-- increase this value if you have longer known_device names
     RSSI = 3
-    INTERPRET_RSSI = 17
+    INTERPRET_RSSI = 22
 
 # function to return key for any value
 def get_key(val, dict) -> str:
     for key, value in dict.items():
         if val == value:
             return key
-    return "no key found"
+    return None
 
 def pad(string, pad_length):
     padded_string = string
@@ -61,13 +67,14 @@ def print_header():
     if Display_Attributes.ADDRESS.value == True:
         head += pad("Address", 19)
     if Display_Attributes.INTERPRET_RSSI.value == True and Display_Attributes.RSSI.value == True:
-        head += pad("Signal Strength", Pad_Lengths.INTERPRET_RSSI.value)
+        # we have to subtract some because of the alignment with the numbers below
+        head += pad("Signal Strength", Pad_Lengths.INTERPRET_RSSI.value - 5)
     elif Display_Attributes.RSSI.value == True:
         head += pad("RSSI:", Pad_Lengths.RSSI.value)
     if Display_Attributes.METADATA.value == True:
         head += "Metadata:" + (" " * 20)
     if Display_Attributes.UUIDS.value == True:
-        head += "UUID(s):" + (" " * 20)
+        head += "UUID(s):" + (" " * 34)
     if Display_Attributes.ADVERTISEMENT_DATA.value == True:
         head += "Advertisement Data:" + (" " * 20)
     print(head + "\u001b[0m")
@@ -84,11 +91,11 @@ def get_device_data(device, advertisement_data) -> str:
         info += str(device.rssi) + " "
         if Display_Attributes.INTERPRET_RSSI.value == True:
             if int(device.rssi) > -50:
-                info += pad("\u001b[32mStrong           \u001b[0m", Pad_Lengths.INTERPRET_RSSI.value - 3)
+                info += pad("\u001b[32mStrong\u001b[0m", Pad_Lengths.INTERPRET_RSSI.value)
             elif int(device.rssi) > -70:
-                info += pad("\u001b[33mModerate         \u001b[0m", Pad_Lengths.INTERPRET_RSSI.value - 3)
+                info += pad("\u001b[33mModerate\u001b[0m", Pad_Lengths.INTERPRET_RSSI.value)
             elif int(device.rssi) < -69:
-                info += pad("\u001b[31mWeak             \u001b[0m", Pad_Lengths.INTERPRET_RSSI.value - 3)
+                info += pad("\u001b[31mWeak\u001b[0m", Pad_Lengths.INTERPRET_RSSI.value)
     # fix null metadata on Linux machines...
     if device.metadata:
         if Display_Attributes.METADATA.value == True:
@@ -124,6 +131,9 @@ def detection_callback(device, advertisement_data):
                     device.name = "Unknown Tile"
                     print(get_device_data(device, advertisement_data))
         elif device.address == search_addr:
+            # set name to friendly name if known
+            if device.address in known_devices.values():
+                device.name = get_key(device.address, known_devices)
             print("\u001b[1m----- Tile of interest found! -----\n", get_device_data(device, advertisement_data))
             # since we found what we're looking for, exit
             sys.exit(0)
@@ -134,15 +144,16 @@ async def main(addr = None, time = 60.0):
     global tiles_found
     if len(args) == 0:
         print("\u001b[1mSearching for all Tile devices for", time, "seconds...\u001b[0m")
+        print_header()
     elif len(args) == 1:
         time = float(args[0])
         print("\u001b[1mSearching for all Tile devices for", time, "seconds...\u001b[0m")
+        print_header()
     elif len(args) == 2:
         time = float(args[0])
         addr = str(args[1])
-        search_addr = addr
-        print("\u001b[1mSearching for Tile w/ address", search_addr, "for", time, "seconds...\u001b[0m")
-    print_header()    
+        search_addr = addr.upper()
+        print("\u001b[1mSearching for Tile w/ address", search_addr, "for", time, "seconds...\u001b[0m")  
     scanner = BleakScanner()
     scanner.register_detection_callback(detection_callback)
     await scanner.start()

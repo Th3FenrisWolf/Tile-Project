@@ -16,13 +16,13 @@ print_string_append = ""
 
 # Label things true or false depending on what information you want to see:
 class Display_Attributes(Enum):
-    DEVICE_NUM = True
-    NAME = True
-    ADDRESS = True
-    METADATA = False # a lot of redundant information
-    RSSI = True
-    INTERPRET_RSSI = True # - displays connection strength
-    UUIDS = False
+    DEVICE_NUM =         True
+    NAME =               True
+    ADDRESS =            True
+    METADATA =           False # a lot of redundant information
+    RSSI =               True
+    INTERPRET_RSSI =     True # - displays connection strength
+    UUIDS =              True
     ADVERTISEMENT_DATA = False
 
 class Pad_Lengths(Enum):
@@ -83,7 +83,8 @@ def print_device_data(device, advertisement_data):
         info += pad(str(devices_found), Pad_Lengths.DEVICE_NUM.value)
     if Display_Attributes.NAME.value == True:
         #if no name, print manufacturer name
-        if device.name == None or device.name[:2] == device.address[:2]:
+        # TODO: make sure this doesn't break linux
+        if device.name == None or device.name == "" or device.name[:2] == device.address[:2]:
             name = get_manufacturer_name(device)
             info += pad(name, Pad_Lengths.NAME.value)
         else:
@@ -106,8 +107,8 @@ def print_device_data(device, advertisement_data):
     if Display_Attributes.ADVERTISEMENT_DATA.value == True:
         info += str(advertisement_data)
     # print a new header every 30 lines
-    if devices_found % 30 == 0:
-        print_header()
+    # if devices_found % 40 == 0:
+    #     print_header()
     global print_string_append
     print(info + print_string_append)
     print_string_append = ""
@@ -116,14 +117,15 @@ def print_device_data(device, advertisement_data):
 # https://bleak.readthedocs.io/en/latest/_modules/bleak/backends/device.html
 def get_manufacturer_name(device) -> str:
     if not device.name:
+        # if tile enabled device, note
+        if device.metadata :
+            if "0000feed-0000-1000-8000-00805f9b34fb" in device.metadata["uuids"] :
+                return "Tile Enabled Device"
         if "manufacturer_data" in device.metadata:
             ks = list(device.metadata["manufacturer_data"].keys())
             if len(ks):
                 return str(MANUFACTURERS.get(ks[0], MANUFACTURERS.get(0xFFFF)))
     # test if tile enabled
-    elif device.metadata :
-        if "0000feed-0000-1000-8000-00805f9b34fb" in device.metadata["uuids"] :
-            return "Tile Enabled Device"
     return "Unknown Manufacturer"
 
 def detection_callback(device, advertisement_data):
@@ -180,5 +182,5 @@ async def main(time = 60.0, addr = None):
 try: 
     asyncio.run(main())
 except KeyboardInterrupt:
-    print("\nTotal BT devices found:", str(devices_found), "(scanner terminated early)")
+    print("Total BT devices found:", str(devices_found), "(scanner terminated early)")
     sys.exit(0)
