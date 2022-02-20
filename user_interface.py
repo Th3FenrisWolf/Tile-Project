@@ -3,6 +3,9 @@
 #within tofu, ask which version, version a, b, c, or d and then which tile "s" for spare key, w for wallet, b for backpack, and t for toy
 #within ring, ask which song they'd like to play, and how loud and which tile
 
+import os, sys
+from tile_programmable_songs import tps
+
 print("\n\tHello! Welcome to the reTOAble API which is used to control a a Tile Tracker.\n")
 print("\tThere are three things you can do: \n\t\t*perform a firmware update -- to do this, input \"f\"\n\t\t*ring the Tile with any of the listed songs you'd like -- input \"r\"\n\t\t*get any and all information about a selected Tile -- input \"t\"\n")
 
@@ -30,9 +33,16 @@ while tile_cmd_valid != True:
         tile_cmd_input = input("\tCommand you would like to execute, input \"f\", \"r\", or \"t\":\t")
         tile_cmd_valid = False
         tile_cmd_cnt+=1
-
-#if tile_cmd == "ring":
+if tile_cmd == "ring":
     #call findTile to find the tiles in the area and put into an object to display then the user can determine which tile they want to ring by inputting it's position/number
     #print out all sounds/TPS and then have the user select which number/position they want to play
     #have the user input how loud they want to play the song, 1, 2, or 3
     #need to change ring to have a function where can input which device, how loud, and what song to connect to
+    song_num = 0
+    #printing out tps
+    absolute_path = os.path.abspath(__file__)
+    file_directory = os.path.dirname(absolute_path)
+    song_val = tps.Known_Tps(song_num)
+
+    my_path = os.path.join(file_directory, "Tile Programmable Songs (TPS)", song_val)
+    print(my_path)
