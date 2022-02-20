@@ -9,11 +9,9 @@ from time import sleep
 from toa import cmd_sender, send_channel_cmd
 from commands.channel import request_open_channel
 from commands.tdi import *
-from commands.ring import request_ring, Strength, Songs
+from commands.song import request_ring_and_wait_response, request_song_program, upload_custom_song, Strength, Songs
 from os import path
 from commands.tofu import request_tofu_ready, upload_firmware
-import sys
-import time
 
 # random byte values, required as seen used in the assembly 
 sres = b"\x22" * 4
@@ -110,23 +108,47 @@ class Tile:
     # NOTE: This function should essentially pass everything along to ring.py, where it actually sends the command.
     #       This functionality, however, does need to be accessible via calling Tile.ring according to CCSW
     def ring(self, song_number: bytes, strength: bytes = Strength.MEDIUM.value):
-        self.submit_async(request_ring(self, song_number, strength)).result()
+        self.submit_async(request_ring_and_wait_response(self, song_number, strength)).result()
 
     def send_firmware_update(self, file_path: str, firmware_version: str):
 
         async def _create_tofu_ctl_resume_ready_rsp_evt(self):
             self._tofu_ctl_resume_ready_rsp_evt = asyncio.Event()
 
+        async def _create_tofu_ctl_block_ready_rsp_evt(self):
+            self._tofu_ctl_block_ready_rsp_evt = asyncio.Event()
+
         self.submit_async(_create_tofu_ctl_resume_ready_rsp_evt(self)).result()
+        self.submit_async(_create_tofu_ctl_block_ready_rsp_evt(self)).result()
 
         file_size = path.getsize(file_path)
         
         # send tofu ctl ready
         self.submit_async(request_tofu_ready(self, firmware_version, file_size)).result()
-        # wait for response confirmation_block_length
 
         # start sending data 
-        self.submit_async(upload_firmware(self, file_path, file_size)).result()
+        self.submit_async(upload_firmware(self, file_path)).result()
+
+    def send_custom_song(self, file_path: str):
+        
+        async def _create_song_program_ready_rsp_evt(self):
+            self._song_program_ready_rsp_evt = asyncio.Event()
+
+        async def _create_song_block_ok_rsp_evt(self):
+            self._song_block_ok_rsp_evt = asyncio.Event()
+
+        self.submit_async(_create_song_program_ready_rsp_evt(self)).result()
+        self.submit_async(_create_song_block_ok_rsp_evt(self)).result()
+
+        file_size = path.getsize(file_path)
+
+        # send song program
+        self.submit_async(request_song_program(self, file_size)).result()
+
+        # start sending data
+        self.submit_async(upload_custom_song(self, file_path)).result()
+
+
 
     def disconnect(self):
         # close channel if channel has been established

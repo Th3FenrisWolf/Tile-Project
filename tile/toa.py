@@ -124,7 +124,11 @@ async def rsp_handler(tile: 'Tile', _sender: int, data: bytearray):
       elif rsp_code == Toa_Rsp_Code.TKA.value:
         from commands.tka import handle_tka_rsp
         await handle_tka_rsp(tile, rsp_payload)
-      print("not handling connection responses yet")
+      elif rsp_code == Toa_Rsp_Code.SONG.value:
+        from commands.song import handle_song_rsp
+        handle_song_rsp(tile, rsp_payload)
+      else:
+        print("not handling connection responses yet")
 
 def disconnected_callback(client):
     print("Client with address {} got disconnected!".format(client.address))
