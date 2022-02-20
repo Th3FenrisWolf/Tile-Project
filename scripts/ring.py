@@ -6,7 +6,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'tile'))
 # To make commonly used classes easy to import (without duplicating them), import them in tile/__init__.py
 # If tile/__init__.py has "from commands.ring import Songs" in it, I can do "from tile import Songs" here,
 # otherwise I'd have to do "from tile.commands.ring import Songs" here
-from tile import Tile, Songs, Strength
+from tile_api import Tile, Songs, Strength
 
 mac      = Known_Tiles.toy_mac.value
 auth_key = Known_Tiles.toy_auth.value

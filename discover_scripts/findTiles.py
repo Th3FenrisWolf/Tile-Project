@@ -1,7 +1,12 @@
 import asyncio
-from bleak import BleakScanner
+from bleak import BleakScanner, BleakClient
 from enum import Enum
-import sys
+import sys, os
+from functools import partial
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '../tile_api'))
+from commands.tdi import Tdi_Cmd_Code, Tdi_Rsp_Code
+from toa import Toa_Cmd_Code, Toa_Rsp_Code
 
 # usage:
 # python3 findTiles.py [search time] [address]
@@ -19,6 +24,7 @@ import sys
 #   We have identified that any firmware after 25.04.06.0 randomizes its MAC address
 #   about every ~ 10-30 minutes
 
+
 known_devices = {
     # Change this dictionary to your own devices and known MAC addresses as you find them
     "Spare key":            "E6:9E:55:1A:91:28",
@@ -34,6 +40,13 @@ search_addr = None
 tileUUID = "0000feed-0000-1000-8000-00805f9b34fb"
 tiles_found = 0
 
+# stuff used for getting the Tile ID
+TILE_TOA_CMD_UUID = "9d410018-35d6-f4dd-ba60-e7bd8dc491c0"
+TILE_TOA_RSP_UUID = "9d410019-35d6-f4dd-ba60-e7bd8dc491c0"
+token = b"\x00" * 4
+TOA_CONNECTIONLESS_CID = b"\x00"
+data: bytes = TOA_CONNECTIONLESS_CID + token + Toa_Cmd_Code.TDI.value + Tdi_Cmd_Code.tile_id.value
+
 # Label things true or false depending on what information you want to see:
 class Display_Attributes(Enum):
     DEVICE_NUM = True
@@ -44,6 +57,7 @@ class Display_Attributes(Enum):
     INTERPRET_RSSI = True  # - displays connection strength - RSSI must be on to work
     UUIDS = False
     ADVERTISEMENT_DATA = False
+    TILE_ID = True
 
 class Pad_Lengths(Enum):
     DEVICE_NUM = 4
@@ -85,7 +99,39 @@ def print_header():
         head += "Advertisement Data:" + (" " * 20)
     print(head + "\u001b[0m")
 
-def get_device_data(device, advertisement_data) -> str:
+class Tile_ID_Wrapper :
+    def __init__(self, got_tile_id_evt):
+        self.got_tile_id_evt = got_tile_id_evt
+
+def tile_id_rsp_handler(tile_id_wrapper, _sender, data):
+    rsp_data = bytes(data)
+    if rsp_data[0:1] == TOA_CONNECTIONLESS_CID:
+        token = rsp_data[1:5]
+        rsp_code = rsp_data[5:6]
+        rsp_payload = rsp_data[6:]
+        if rsp_code == Toa_Rsp_Code.TDI.value:
+            tdi_rsp_code = rsp_payload[0:1]
+            if tdi_rsp_code == Tdi_Rsp_Code.tile_id.value:
+                tile_id_wrapper.tile_id = rsp_payload[1:].hex()
+                tile_id_wrapper.got_tile_id_evt.set()
+            else:
+                print(f"Unhandled tdi_rsp_code {tdi_rsp_code}")
+        else:
+            print(f"unhandled rsp_code: {rsp_code}")
+
+async def get_tile_id(btaddr):
+    while True:
+        try:
+            async with BleakClient(btaddr, timeout=10) as client:
+                tile_id_wrapper = Tile_ID_Wrapper(asyncio.Event())
+                await client.start_notify(TILE_TOA_RSP_UUID, partial(tile_id_rsp_handler, tile_id_wrapper))
+                await client.write_gatt_char(TILE_TOA_CMD_UUID, data)
+                await tile_id_wrapper.got_tile_id_evt.wait()
+                return tile_id_wrapper.tile_id
+        except Exception as e:
+            pass
+
+async def get_device_data(device, advertisement_data) -> str:
     info = ""
     if Display_Attributes.DEVICE_NUM.value == True:
         info += pad(str(tiles_found), Pad_Lengths.DEVICE_NUM.value)
@@ -109,10 +155,14 @@ def get_device_data(device, advertisement_data) -> str:
         if Display_Attributes.UUIDS.value == True:
             info += str(device.metadata["uuids"]) + "  "
     if Display_Attributes.ADVERTISEMENT_DATA.value == True:
-        info += (str(advertisement_data))
+        info += str(advertisement_data)
+    if Display_Attributes.TILE_ID.value == True:
+        # get TDI information
+        tile_id = await get_tile_id(device.address)
+        info += tile_id
     return info
 
-def detection_callback(device, advertisement_data):
+async def detection_callback(device, advertisement_data):
     # Whenever a device is found...
     global search_addr
     global found_addr_list
@@ -131,16 +181,16 @@ def detection_callback(device, advertisement_data):
                 # if device is known, give it a meaningful name
                 if device.address in known_devices.values():
                     device.name = get_key(device.address, known_devices)
-                    print(get_device_data(device, advertisement_data))
+                    print(await get_device_data(device, advertisement_data))
                 # otherwise just print
                 else:
                     device.name = "Unknown Tile"
-                    print(get_device_data(device, advertisement_data))
+                    print(await get_device_data(device, advertisement_data))
         elif device.address == search_addr:
             # set name to friendly name if known
             if device.address in known_devices.values():
                 device.name = get_key(device.address, known_devices)
-            print("\u001b[1m----- Tile of interest found! -----\n", get_device_data(device, advertisement_data))
+            print("\u001b[1m----- Tile of interest found! -----\n", await get_device_data(device, advertisement_data))
             # since we found what we're looking for, exit
             sys.exit(0)
 

@@ -1,9 +1,6 @@
 from enum import Enum
 from time import sleep
 from toa import Toa_Cmd_Code, send_channel_cmd
-import hashlib
-import hmac
-import asyncio
 
 # referenced in tile_song_module.h:216
 class Strength(Enum):
