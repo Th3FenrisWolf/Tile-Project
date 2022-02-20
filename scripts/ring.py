@@ -8,12 +8,12 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'tile'))
 # otherwise I'd have to do "from tile.commands.ring import Songs" here
 from tile import Tile, Songs, Strength
 
-mac      = Known_Tiles.backpack_mac.value
-auth_key = Known_Tiles.backpack_auth.value
+mac      = Known_Tiles.toy_mac.value
+auth_key = Known_Tiles.toy_auth.value
 
 # Auth key is only necessary if the commands we want to send require it, otherwise it can be excluded
 tile = Tile(mac, auth_key)
 # Connect if the tile isn't connected, open a channel if there isn't already one open, and send the ring command
-tile.ring(Songs.BIP_1.value)
+tile.ring(Songs.FIND.value, Strength.LOW.value)
 
 tile.disconnect()
