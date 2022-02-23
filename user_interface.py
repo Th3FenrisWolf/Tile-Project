@@ -1,48 +1,123 @@
-#start with asking user what command they want to do, "f" or "F" for firmware update, "r" or "R" for ring
-
-#within tofu, ask which version, version a, b, c, or d and then which tile "s" for spare key, w for wallet, b for backpack, and t for toy
-#within ring, ask which song they'd like to play, and how loud and which tile
-
-import os, sys
+import os, sys, time, random, re, asyncio, getpass
+from sqlite3 import connect
 from tile_programmable_songs import tps
+from pytile import async_login
+from pwinput import pwinput
+from aiohttp import ClientSession
 
-print("\n\tHello! Welcome to the reTOAble API which is used to control a a Tile Tracker.\n")
-print("\tThere are three things you can do: \n\t\t*perform a firmware update -- to do this, input \"f\"\n\t\t*ring the Tile with any of the listed songs you'd like -- input \"r\"\n\t\t*get any and all information about a selected Tile -- input \"t\"\n")
+# variables
+user_email = ""
+user_password = ""
+regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+') # borrowed from somewhere on Github . . . 
+user_email_valid = False
+myTiles = False # set to true when the user wants to see their tiles, false when they want to see all tiles
+tile_cmd = "" # set to r, t, or f, no longer than one character long
+tile_cmd_valid = False # set to true when it is just f, t, or r and nothing else
+tile_choice = "" # set to m for my tiles or a or all tiles
+tile_choice_valid = False # verifies that it's what it's supposed to be
+tile_selected = 0
 
-tile_cmd_input = input("\tCommand you would like to execute, input \"f\", \"r\", or \"t\":\t")
-tile_cmd = ""
-tile_cmd_valid = False
-tile_cmd_cnt = 0
+# functions
+def slow_type(t):
+    typing_speed = 80 #wpm
+    for l in t:
+        sys.stdout.write(l)
+        sys.stdout.flush()
+        time.sleep(random.random()*10.0/typing_speed)
+    print('')
+    time.sleep(1)
 
-while tile_cmd_valid != True:
-    if tile_cmd_input.lower() == 'f':
-        tile_cmd = "tofu"
-        tile_cmd_valid = True
-    elif tile_cmd_input.lower() == 'r':
-        tile_cmd = "ring"
-        tile_cmd_valid = True
-    elif tile_cmd_input.lower == 't':
-        tile_cmd = "tdi"
-        tile_cmd_valid = True
-    else:
-        if tile_cmd_cnt >= 4:
-            print("It appears you are having a hard time, let's do ring!")
-            tile_cmd = 'ring'
-            break
-        print("Sorry, " + tile_cmd_input + " is not a valid command, try again please!")
-        tile_cmd_input = input("\tCommand you would like to execute, input \"f\", \"r\", or \"t\":\t")
-        tile_cmd_valid = False
-        tile_cmd_cnt+=1
-if tile_cmd == "ring":
-    #call findTile to find the tiles in the area and put into an object to display then the user can determine which tile they want to ring by inputting it's position/number
-    #print out all sounds/TPS and then have the user select which number/position they want to play
-    #have the user input how loud they want to play the song, 1, 2, or 3
-    #need to change ring to have a function where can input which device, how loud, and what song to connect to
-    song_num = 0
-    #printing out tps
-    absolute_path = os.path.abspath(__file__)
-    file_directory = os.path.dirname(absolute_path)
-    song_val = tps.Known_Tps(song_num)
+async def connectToTileAccount() -> None:
+    """Run!"""
+    async with ClientSession() as session:
+        api = await async_login(user_email, user_password, session)
+        slow_type("Successfully connected to Tile account")
+        tiles = await api.async_get_tiles()
 
-    my_path = os.path.join(file_directory, "Tile Programmable Songs (TPS)", song_val)
-    print(my_path)
+        count = 0
+        for tile_uuid, tile in tiles.items():
+            pass
+            #print(f"The Tile's name is {tile.name}")
+            #user_tiles[count] = tile_obj(tile.name, tile.uuid, tile.firmware_version)
+            #count+=1
+        #print(help(tile))   
+        return tiles
+
+# Step 1. Have a little intro/explanation for this user interface and what it's for, how it'll work
+print("_"*140+"\n")
+print("\tHello! Welcome to the (reTOAblepy or reTOAble or reTOApy or something like that) API which is used to control a a Tile Tracker.")
+print("_"*140+"\n")
+
+# Step 2. Ask the user for their Tile account's email and password -- store in variables, need to verify that email is ok format
+user_email = input("Please input the email that is associated with your Tile account: ")
+print("Verifying your email, just a moment . . . ")
+while(not (re.fullmatch(regex, user_email))):
+    user_email = input("Sorry, not a valid format, please input the email that is associated with your Tile account: ")
+user_password = pwinput("Please input the password that is associated with your Tile account: ")
+#user_password = input("Please input the password that is associated with your Tile account: ")
+
+# Step 3. Done in background - connect with pyTile to the users account - get auth key here
+# Can connect to pyTile and can get all kinds of info (mac address) being important but still not the auth key even though it should be stored somewhere and should be able to access it somewhere. So also need to see if I can access the tile id here, that would be majorly helpful
+
+# Step 4. Ask user if they would like to see a listing of all their Tiles or of all the available Tiles in the area ("m" for my Tiles, "a" for all in area)
+
+print("Would you like to connect to one of your Tiles or would you like to see all the Tile's in the area?")
+tile_choice = input("Type 'm' for a listing of all your Tiles or 'a' for a listing of all the Tiles in the area: ")
+if(tile_choice.lower() == 'm' or tile_choice.lower() == 'a'):
+    tile_choice_valid = True
+while(not tile_choice_valid):
+    tile_choice= input(f"{tile_choice} is not a valid option, please type either m or a: ")
+    if(tile_choice.lower()=='m' or tile_choice.lower() == 'a'):
+        tile_choice_valid = True
+
+# Step 5. If their Tiles, list all of the ones that are connected to their Tile account - can do ring, firmware update, or TDI for any of the Tiles in their account
+#         If all the Tiles in the area -- can do TDI for any of them
+
+tile_list_num = 1
+
+if(tile_choice == 'm' and tile_choice_valid == True):
+    print(f"Tiles connected to account are: ") 
+    tile_list = asyncio.run(connectToTileAccount())
+    #print(tile_list)
+    #print(f"test type is {type(tile_list)}")
+    for tile_uuid, tile in tile_list.items():
+        print(f"{tile_list_num}. {tile.name}")
+        tile_list_num+=1
+
+tile_selected = input("\nSelect which one you would like by typing it numerically: ")
+
+
+# Step 6. Have the Tiles listed with a number and the name (if there), mac address, and Tile ID, have the user input a number (such as "1" for the first in the list) to select which one they want to choose
+
+# Step 7. If their Tiles - ask if they'd like to ring, do a firmware update, or tdi for their selected Tile ("r" for ring, "f" for firmware update, "t" for tdi)
+#         If all tiles - skip this step and go automatically to tdi
+
+# Step ring. List all the songs enumerated (both tps and songs preloaded on tile) -- and have the user choose one (like doing "3" for the third in the list)
+#            List the possible volumes (low, medium, high aka 1,2,3) and have the user input which one they would like to choose (like doing "2" for medium volume)
+#            Call the ring function with the tile id, auth key (need to get in this step), selected song, and selected volume
+#            After it's done, ask if they would like to exit or restart - if exit then cleanly disconnect and clear all the variables, if restart go back to step 4
+
+# Step firmware. List all the firmware versions enumerated -- and have the user choose one
+#                Call the tofu function with the tile id, auth key (need to get in this step), and selected firmware
+#                After it's done, ask if they would like to exit or restart - if exit then cleanly disconnect and clear all the variables, if restart go back to step 4
+
+# Step tdi. List all tdi info
+#           After it's done, ask if they would like to exit or restart - if exit then cleanly disconnect and clear all the variables, if restart go back to step 4
+
+# Step exit. Cleanly disconnect from the tile, call disconnect, clear all the variables
+
+# Step dependancy script: create a dependancy script -- need to run a pip install bleak and pip install pytile and pip install pwinput
+
+
+
+
+
+
+#random stuff from before...
+#    #printing out tps
+#    absolute_path = os.path.abspath(__file__)
+#    file_directory = os.path.dirname(absolute_path)
+#    song_val = tps.Known_Tps(song_num)
+#
+#    my_path = os.path.join(file_directory, "Tile Programmable Songs (TPS)", song_val)
+#    print(my_path)
