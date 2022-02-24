@@ -12,7 +12,7 @@ mac      = Known_Tiles.toy_mac.value
 auth_key = Known_Tiles.toy_auth.value
 
 # Auth key is only necessary if the commands we want to send require it, otherwise it can be excluded
-tile = Tile(mac, auth_key)
+tile = Tile("c5:3f:df:e9:0b:4a", auth_key)
 # Connect if the tile isn't connected, open a channel if there isn't already one open, and send the ring command
 tile.ring(Songs.FIND.value, Strength.LOW.value)
 
