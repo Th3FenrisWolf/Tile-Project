@@ -54,16 +54,17 @@ class Display_Attributes(Enum):
     ADDRESS = True
     METADATA = False  # a lot of redundant information
     RSSI = True  # recommended to leave on
-    INTERPRET_RSSI = True  # - displays connection strength - RSSI must be on to work
+    INTERPRET_RSSI = False  # - displays connection strength - RSSI must be on to work
     UUIDS = False
     ADVERTISEMENT_DATA = False
-    TILE_ID = True
+    TILE_ID = False
 
 class Pad_Lengths(Enum):
     DEVICE_NUM = 4
     NAME = 20   # <-- increase this value if you have longer known_device names
     RSSI = 3
     INTERPRET_RSSI = 22
+    TILE_ID = 53
 
 # function to return key for any value
 def get_key(val, dict) -> str:
@@ -97,6 +98,8 @@ def print_header():
         head += "UUID(s):" + (" " * 34)
     if Display_Attributes.ADVERTISEMENT_DATA.value == True:
         head += "Advertisement Data:" + (" " * 20)
+    if Display_Attributes.TILE_ID.value == True:
+        head += pad("Tile ID:", Pad_Lengths.TILE_ID.value)
     print(head + "\u001b[0m")
 
 class Tile_ID_Wrapper :
@@ -122,11 +125,13 @@ def tile_id_rsp_handler(tile_id_wrapper, _sender, data):
 async def get_tile_id(btaddr):
     while True:
         try:
-            async with BleakClient(btaddr, timeout=10) as client:
+            print(f"trying to talk to bluetooth address {btaddr}")
+            async with BleakClient(btaddr, timeout=20) as client:
                 tile_id_wrapper = Tile_ID_Wrapper(asyncio.Event())
                 await client.start_notify(TILE_TOA_RSP_UUID, partial(tile_id_rsp_handler, tile_id_wrapper))
                 await client.write_gatt_char(TILE_TOA_CMD_UUID, data)
                 await tile_id_wrapper.got_tile_id_evt.wait()
+                #print("Tile ID: ", str(tile_id_wrapper.tile_id))
                 return tile_id_wrapper.tile_id
         except Exception as e:
             pass
@@ -158,7 +163,11 @@ async def get_device_data(device, advertisement_data) -> str:
         info += str(advertisement_data)
     if Display_Attributes.TILE_ID.value == True:
         # get TDI information
-        tile_id = await get_tile_id(device.address)
+        #print("getting tile ID")
+        if int(device.rssi) > -70:
+            tile_id = pad(await get_tile_id(device.address), Pad_Lengths.TILE_ID.value)
+        else:
+            tile_id = pad("(Too far away. Bring the Tile closer to read Tile ID)", Pad_Lengths.TILE_ID.value)
         info += tile_id
     return info
 
@@ -210,6 +219,7 @@ async def main(addr = None, time = 60.0):
         addr = str(args[1])
         search_addr = addr.upper()
         print("\u001b[1mSearching for Tile w/ address", search_addr, "for", time, "seconds...\u001b[0m")  
+        print_header()
     scanner = BleakScanner()
     scanner.register_detection_callback(detection_callback)
     await scanner.start()
