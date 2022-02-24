@@ -103,30 +103,31 @@ async def detection_callback(pq, device, advertisement_data):
     global tileUUID
     global known_addresses
     global tiles_found
-    if tileUUID in device.metadata["uuids"]:
-        # we found a tile
-        if search_addr == None:
-            # if not searching for any particular tile:
-            # exclude devices we don't want to appear
-            if device.address not in found_addr_list:
-                # document only unique instances
-                tiles_found += 1
-                found_addr_list.append(device.address)
-                # if device is known, give it a meaningful name
+    if hasattr(advertisement_data, 'service_data'):
+        if tileUUID in str(advertisement_data.service_data):
+            # we found a tile
+            if search_addr == None:
+                # if not searching for any particular tile:
+                # exclude devices we don't want to appear
+                if device.address not in found_addr_list:
+                    # document only unique instances
+                    tiles_found += 1
+                    found_addr_list.append(device.address)
+                    # if device is known, give it a meaningful name
+                    if device.address in known_addresses.values():
+                        device.name = get_key(device.address, known_addresses)
+                        print(await get_device_data(pq, device, advertisement_data), end="")
+                    # otherwise just print
+                    else:
+                        device.name = "Unknown Tile"
+                        print(await get_device_data(pq, device, advertisement_data), end="")
+            elif device.address == search_addr:
+                # set name to friendly name if known
                 if device.address in known_addresses.values():
                     device.name = get_key(device.address, known_addresses)
-                    print(await get_device_data(pq, device, advertisement_data), end="")
-                # otherwise just print
-                else:
-                    device.name = "Unknown Tile"
-                    print(await get_device_data(pq, device, advertisement_data), end="")
-        elif device.address == search_addr:
-            # set name to friendly name if known
-            if device.address in known_addresses.values():
-                device.name = get_key(device.address, known_addresses)
-            print(f"{Formatting.INVERTED.value}----- Tile of interest found! -----\n {await get_device_data(pq, device, advertisement_data)} {Formatting.CLEAR.value}")
-            # since we found what we're looking for, exit
-            sys.exit(0)
+                print(f"{Formatting.INVERTED.value}----- Tile of interest found! -----\n {await get_device_data(pq, device, advertisement_data)} {Formatting.CLEAR.value}")
+                # since we found what we're looking for, exit
+                sys.exit(0)
 
 class Tile_ID_Wrapper :
     def __init__(self, got_tile_id_evt):
