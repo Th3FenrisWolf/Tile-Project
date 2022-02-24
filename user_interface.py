@@ -1,7 +1,8 @@
 import os, sys, time, random, re, asyncio, getpass
 from sqlite3 import connect
 from tile_programmable_songs import tps
-from pytile import async_login
+sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'pytile/pytile'))
+from api import async_login
 from pwinput import pwinput
 from aiohttp import ClientSession
 
