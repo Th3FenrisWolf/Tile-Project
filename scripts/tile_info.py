@@ -1,9 +1,9 @@
 import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'tile'))
-from tile import Tile
+from tile_api import Tile
 from known_tiles import Known_Tiles
 
-tile = Tile(Known_Tiles.spare_key_mac.value)  # TDI command doesn't require a channel, so auth key isn't needed
+tile = Tile("DB:1A:96:20:D0:A0")  # TDI command doesn't require a channel, so auth key isn't needed
 
 # See @property decorator, store results so future references to properties that have 
 # already been used don't send unnecessary commands
