@@ -10,12 +10,14 @@ user_email = ""
 user_password = ""
 regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+') # borrowed from somewhere on Github . . . 
 user_email_valid = False
-myTiles = False # set to true when the user wants to see their tiles, false when they want to see all tiles
-tile_cmd = "" # set to r, t, or f, no longer than one character long
-tile_cmd_valid = False # set to true when it is just f, t, or r and nothing else
-tile_choice = "" # set to m for my tiles or a or all tiles
-tile_choice_valid = False # verifies that it's what it's supposed to be
+myTiles = False                 # set to true when the user wants to see their tiles, false when they want to see all tiles
+tile_cmd = ""                   # set to r, t, or f, no longer than one character long
+tile_cmd_valid = False          # set to true when it is just f, t, or r and nothing else
+tile_choice = ""                # set to m for my tiles or a or all tiles
+tile_choice_valid = False       # verifies that it's what it's supposed to be
 tile_selected = 0
+action_chosen = ""              # this is what will hold r, f, or t
+action_chosen_valid = False     # will be changed to true when verified as true
 
 # functions
 def slow_type(t):
@@ -74,32 +76,52 @@ while(not tile_choice_valid):
 #         If all the Tiles in the area -- can do TDI for any of them
 
 tile_list_num = 1
+#tile_list = None
 
+# if selected to see all their tiles
 if(tile_choice == 'm' and tile_choice_valid == True):
     print(f"Tiles connected to account are: ") 
     tile_list = asyncio.run(connectToTileAccount())
     #print(tile_list)
     #print(f"test type is {type(tile_list)}")
     for tile_uuid, tile in tile_list.items():
-        print(f"{tile_list_num}. {tile.name}")
-        tile_list_num+=1
+        if tile.kind == "TILE":
+            print(f"{tile_list_num}. {tile.name}")
+            tile_list_num+=1
 
-tile_selected = input("\nSelect which one you would like by typing it numerically: ")
+    # Step 6.m Have the Tiles listed with a number and the name (if there), mac address, and Tile ID, have the user input a number (such as "1" for the first in the list) to select which one they want to choose
+    tile_selected = int(input("\nSelect which one you would like by typing it numerically: "))
+    print(list(tile_list.values())[tile_selected-1])
 
+    # Step 7.m If their Tiles - ask if they'd like to ring, do a firmware update, or tdi for their selected Tile ("r" for ring, "f" for firmware update, "t" for tdi)
+    action_chosen = input("For the selected Tile please type 'r' to ring the Tile, 'f' to perform a firmware update, or 't' to list all the Tile's info: ")
+    if(action_chosen.lower() == 'r' or action_chosen.lower() == 'f' or action_chosen.lower() == 't'):
+        action_chosen_valid = True
+    while(not action_chosen_valid):
+        action_chosen = input(f"{action_chosen} is not a valid option, please type either r or f or t: ")
+        if(action_chosen.lower() == 'r' or action_chosen.lower() == 'f' or action_chosen.lower() == 't'):
+            action_chosen_valid = True
 
-# Step 6. Have the Tiles listed with a number and the name (if there), mac address, and Tile ID, have the user input a number (such as "1" for the first in the list) to select which one they want to choose
+#   Step ring. List all the songs enumerated (both tps and songs preloaded on tile) -- and have the user choose one (like doing "3" for the third in the list)
+#       List the possible volumes (low, medium, high aka 1,2,3) and have the user input which one they would like to choose (like doing "2" for medium volume)
+#       Call the ring function with the tile id, auth key (need to get in this step), selected song, and selected volume
+#       After it's done, ask if they would like to exit or restart - if exit then cleanly disconnect and clear all the variables, if restart go back to step 4
+    if(action_chosen.lower() == 'r' and action_chosen_valid):
+        #need to list all the possible songs
+        print("Possible songs to choose from are these: ")
 
-# Step 7. If their Tiles - ask if they'd like to ring, do a firmware update, or tdi for their selected Tile ("r" for ring, "f" for firmware update, "t" for tdi)
-#         If all tiles - skip this step and go automatically to tdi
-
-# Step ring. List all the songs enumerated (both tps and songs preloaded on tile) -- and have the user choose one (like doing "3" for the third in the list)
-#            List the possible volumes (low, medium, high aka 1,2,3) and have the user input which one they would like to choose (like doing "2" for medium volume)
-#            Call the ring function with the tile id, auth key (need to get in this step), selected song, and selected volume
-#            After it's done, ask if they would like to exit or restart - if exit then cleanly disconnect and clear all the variables, if restart go back to step 4
-
-# Step firmware. List all the firmware versions enumerated -- and have the user choose one
+#   Step firmware. List all the firmware versions enumerated -- and have the user choose one
 #                Call the tofu function with the tile id, auth key (need to get in this step), and selected firmware
 #                After it's done, ask if they would like to exit or restart - if exit then cleanly disconnect and clear all the variables, if restart go back to step 4
+
+# Step tdi. List all tdi info
+#           After it's done, ask if they would like to exit or restart - if exit then cleanly disconnect and clear all the variables, if restart go back to step 4
+
+# if selected to see all the tiles in the area
+# if(tile_choice =='a' and tile_choice_valid == True):
+    # need to call findTiles here - but an abbreviated version of the script
+
+# Step 6.a Have the Tiles listed with a number and the name (if there), mac address, and Tile ID, have the user input a number (such as "1" for the first in the list) to select which one they want to choose
 
 # Step tdi. List all tdi info
 #           After it's done, ask if they would like to exit or restart - if exit then cleanly disconnect and clear all the variables, if restart go back to step 4
@@ -108,16 +130,11 @@ tile_selected = input("\nSelect which one you would like by typing it numericall
 
 # Step dependancy script: create a dependancy script -- need to run a pip install bleak and pip install pytile and pip install pwinput
 
-
-
-
-
-
-#random stuff from before...
-#    #printing out tps
-#    absolute_path = os.path.abspath(__file__)
-#    file_directory = os.path.dirname(absolute_path)
-#    song_val = tps.Known_Tps(song_num)
+#random stuff
+#printing out tps
+        #absolute_path = os.path.abspath(__file__)
+        #file_directory = os.path.dirname(absolute_path)
+        #song_val = tps.Known_Tps(3)
 #
-#    my_path = os.path.join(file_directory, "Tile Programmable Songs (TPS)", song_val)
-#    print(my_path)
+        #my_path = os.path.join(file_directory, "Tile Programmable Songs (TPS)", song_val)
+        #print(my_path)
