@@ -1,9 +1,11 @@
 import os, sys, time, random, re, asyncio, getpass
 from sqlite3 import connect
+
 sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'pytile/pytile'))
 from api import async_login
 from pwinput import pwinput
 from aiohttp import ClientSession
+from errors import InvalidAuthError
 sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'tile_api/commands'))
 from song import Songs
 sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'scripts'))
@@ -28,7 +30,8 @@ song_number_chosen = False      # not actually implemented currently but will ev
 song_volume = 0
 song_volume_valid = False       # not actually impleneted currently but will eventually
 
-# functions
+# Functions
+# Pretty Print
 def slow_type(t):
     typing_speed = 80 #wpm
     for l in t:
@@ -38,7 +41,7 @@ def slow_type(t):
     print('')
     time.sleep(1)
 
-# need to make it tell if your tile password or email are wrong and ask them to re-input it all, might need to make username and password input a function
+# Check Auth
 async def connectToTileAccount() -> None:
     """Run!"""
     async with ClientSession() as session:
@@ -47,25 +50,29 @@ async def connectToTileAccount() -> None:
         tiles = await api.async_get_tiles()
         return tiles
 
-# Step 1. Have a little intro/explanation for this user interface and what it's for, how it'll work
+# TODO Explain UI to User
 print("_"*140+"\n")
 print("\tHello! Welcome to the (reTOAblepy or reTOAble or reTOApy or something like that) API which is used to control a a Tile Tracker.")
 print("_"*140+"\n")
 
-# Step 2. Ask the user for their Tile account's email and password -- store in variables, need to verify that email is ok format
-user_email = input("Please input the email that is associated with your Tile account: ")
-print("Verifying your email, just a moment . . . ")
-while(not (re.fullmatch(regex, user_email))):
-    user_email = input("Sorry, not a valid format, please input the email that is associated with your Tile account: ")
-user_password = pwinput("Please input the password that is associated with your Tile account: ")
-#user_password = input("Please input the password that is associated with your Tile account: ")
+# Will Loop Until Valid Authentication
+while True:
+    # Get Login and Verify
+    user_email = input("Please input the email that is associated with your Tile account: ")
+    # Check Email Format
+    while(not (re.fullmatch(regex, user_email))):
+        user_email = input("Sorry, not a valid format, please input the email that is associated with your Tile account: ")
 
-# Step 3. Done in background - connect with pyTile to the users account - get auth key here
-# Can connect to pyTile and can get all kinds of info (mac address) being important but still not the auth key even though it should be stored somewhere and should be able to access it somewhere. So also need to see if I can access the tile id here, that would be majorly helpful
-tile_list = asyncio.run(connectToTileAccount())
+    user_password = pwinput("Please input the password that is associated with your Tile account: ")
 
-# Step 4. Ask user if they would like to see a listing of all their Tiles or of all the available Tiles in the area ("m" for my Tiles, "a" for all in area)
+    # Connect to Account - from Pytile
+    try:
+        tile_list = asyncio.run(connectToTileAccount())
+        break
+    except InvalidAuthError as err:
+        print("Invalid Authentication")
 
+# Ask User What to Do ("m" for my Tiles, "a" for all in area)
 print("Would you like to connect to one of your Tiles or would you like to see all the Tile's in the area?")
 tile_choice = input("Type 'm' for a listing of all your Tiles or 'a' for a listing of all the Tiles in the area: ")
 if(tile_choice.lower() == 'm' or tile_choice.lower() == 'a'):
@@ -77,7 +84,6 @@ while(not tile_choice_valid):
 
 # Step 5. If their Tiles, list all of the ones that are connected to their Tile account - can do ring, firmware update, or TDI for any of the Tiles in their account
 #         If all the Tiles in the area -- can do TDI for any of them
-
 tile_list_num = 1
 #tile_list = None
 
@@ -131,9 +137,9 @@ if(tile_choice == 'm' and tile_choice_valid == True):
             for song_num, song in enumerate(Known_Tps_two):
                 print(f"{song_num+1}. {song.name}")
             song_number = int(input("Which of these do you want to choose? Input that number: "))
-            print(f"Song_number type is: {type(song_number)}")
-            song_chosen = Known_Tps_two(song_number)
-            print(f"Song chosen: {song_chosen.name}")
+            for song_num, song in enumerate(Known_Tps_two):
+                if (song_num + 1) == song_number:
+                    song_chosen = song.name
 
         # basic songs listed and one chosen
         if(tps_or_loaded == 'b' and tps_or_loaded_valid):
@@ -141,20 +147,23 @@ if(tile_choice == 'm' and tile_choice_valid == True):
             for song_num, song in enumerate(Songs):
                 print(f"{song_num+1}. {song.name}")
             song_number = int(input("Which of these do you want to choose? Input that number: "))
-            #not working
-            songs = list(Songs.values())
-            song_chosen = songs[song_number-1]
-            print(f"Song chosen: {song_chosen.name}")
+            for song_num, song in enumerate(Songs):
+                if (song_num + 1) == song_number:
+                    song_chosen = song.name
 
         #input the volume of whichever song needs to be played
-        song_volume = input("What volume would you like to play the song? Enter 1 for low, 2 for medium, and 3 for high: ")
+        
         #validate that it's 1, 2, or 3
+        while(not song_volume_valid):
+            song_volume = input("What volume would you like to play the song? Enter 1 for low, 2 for medium, and 3 for high: ")
+            if(song_volume == 1 or song_volume == 2 or song_volume == 3):
+                song_volume_valid = True
 
         #call ring
 
-    # end of ring stuff 
+        # end of ring stuff 
 
-    dummy = input("   ")
+        dummy = input("   ")
 
 #   Step firmware. List all the firmware versions enumerated -- and have the user choose one
 #       Call the tofu function with the tile id, auth key (need to get in this step), and selected firmware
@@ -186,11 +195,12 @@ if(tile_choice =='a' and tile_choice_valid == True):
 
 # Step dependancy script: create a dependancy script -- need to run a pip install bleak and pip install pwinput and pip install aiohttp
 
-#random stuff
-#printing out tps
-        #absolute_path = os.path.abspath(__file__)
-        #file_directory = os.path.dirname(absolute_path)
-        #song_val = tps.Known_Tps(3)
-#
-        #my_path = os.path.join(file_directory, "Tile Programmable Songs (TPS)", song_val)
-        #print(my_path)
+# random stuff
+# printing out tps
+        # absolute_path = os.path.abspath(__file__)
+        # file_directory = os.path.dirname(absolute_path)
+        # song_val = tps.Known_Tps(3)
+
+        # my_path = os.path.join(file_directory, "Tile Programmable Songs (TPS)", song_val)
+        # # sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'scripts'))
+        # print(my_path)
