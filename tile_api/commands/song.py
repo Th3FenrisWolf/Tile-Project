@@ -1,8 +1,6 @@
 from enum import Enum
 from time import sleep
-from toa import Toa_Cmd_Code, send_channel_cmd
 import asyncio
-from crc import crc16
 from io import BytesIO
 
 # referenced in tile_song_module.h:216
@@ -77,6 +75,7 @@ def handle_song_rsp(tile: 'Tile', rsp_payload: bytes):
 # strength ranges from 0-3, where 0 is silent and 3 is loudest
 # according to tile_song_module.h:214
 async def request_ring_and_wait_response(tile: 'Tile', song_number: bytes, strength: bytes) -> None:
+    from toa import Toa_Cmd_Code, send_channel_cmd
     tile._song_play_ok_rsp_evt = asyncio.Event()
     toa_cmd_payload = Song_Cmd_Code.PLAY.value + song_number + strength
     await send_channel_cmd(tile, Toa_Cmd_Code.SONG, toa_cmd_payload)
@@ -85,12 +84,15 @@ async def request_ring_and_wait_response(tile: 'Tile', song_number: bytes, stren
 
 
 async def request_song_program(tile: 'Tile', file_size: int):
+    from toa import Toa_Cmd_Code, send_channel_cmd
     # our research showed this must be 1
     song_index_to_overwrite = (1).to_bytes(1, 'little')
     payload = Song_Cmd_Code.PROGRAM.value + song_index_to_overwrite + file_size.to_bytes(2, "little")
     await send_channel_cmd(tile, Toa_Cmd_Code.SONG, payload)
 
 async def upload_custom_song(tile: 'Tile', file_path: str):
+    from crc import crc16
+    from toa import Toa_Cmd_Code, send_channel_cmd
     # ensure that the resume ready rsp has been gotten
     await tile._song_program_ready_rsp_evt.wait()
 
