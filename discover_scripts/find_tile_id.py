@@ -110,13 +110,12 @@ async def detection_callback(pq, device, advertisement_data):
     if hasattr(advertisement_data, 'service_data'):
         if tileUUID in str(advertisement_data.service_data):
             # we found a tile
-            if search_id == None:
-                # if not searching for any particular tile:
-                # exclude devices we don't want to appear
-                if device.address not in found_addr_list:
-                    # document only unique instances
-                    tiles_found += 1
-                    found_addr_list.append(device.address)
+            if device.address not in found_addr_list:
+                # document only unique instances
+                found_addr_list.append(device.address)
+                if search_id == None:
+                    # if not searching for any particular tile:
+                    # exclude devices we don't want to appear
                     # if device is known, give it a meaningful name
                     if device.address in known_addresses.values():
                         device.name = get_key(device.address, known_addresses)
@@ -125,6 +124,10 @@ async def detection_callback(pq, device, advertisement_data):
                     else:
                         device.name = "Unknown Tile"
                         print(await get_device_data(pq, device, advertisement_data), end="")
+                else:
+                    # we are searching for a particular tile
+                    print(await get_device_data(pq, device, advertisement_data), end="")
+
                 
 class Tile_ID_Wrapper :
     def __init__(self, got_tile_id_evt):
@@ -147,10 +150,10 @@ def tile_id_rsp_handler(tile_id_wrapper, _sender, data):
             print(f"unhandled rsp_code: {rsp_code}")
 
 async def get_tile_id(device):
-    for attempt in range(1):
+    for attempt in range(2):
         try:
-            print(f"Connecting to Tile @ {device.address} ({device.name}) - Attempt {attempt + 1}...")
-            async with BleakClient(device.address, timeout=45) as client:
+            print(f"Connecting to Tile @ {device.address} - Attempt {attempt + 1}...")
+            async with BleakClient(device.address, timeout=30) as client:
                 tile_id_wrapper = Tile_ID_Wrapper(asyncio.Event())
                 await client.start_notify(TILE_TOA_RSP_UUID, partial(tile_id_rsp_handler, tile_id_wrapper))
                 await client.write_gatt_char(TILE_TOA_CMD_UUID, data)
@@ -179,6 +182,7 @@ async def connector(pq):
                 tile_id = pad("(Error: Too many retries)", Pad_Lengths.TILE_ID.value)
             elif result.upper() == search_id.upper():
                 # tile of interest found
+                tile_id = result.upper()
                 print(await get_device_data(pq, device, None, tile_id))
                 print("Tile of Interest Found, exiting")
                 sys.exit(0)
@@ -186,7 +190,8 @@ async def connector(pq):
                 tile_id = pad(str(result).upper(), Pad_Lengths.TILE_ID.value)
         else:
             tile_id = pad("(Weak connection -- Bring the Tile closer to read Tile ID)", Pad_Lengths.TILE_ID.value)
-        print(await get_device_data(pq, device, None, tile_id))
+        if search_id is None:
+            print(await get_device_data(pq, device, None, tile_id))
 
 async def main(id = None):
     time = 80.0
