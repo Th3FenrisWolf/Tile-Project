@@ -22,7 +22,7 @@ known_addresses = {
 
 scanning = True
 found_addr_list = []
-search_addr = None
+search_id = None
 tileUUID = "0000feed-0000-1000-8000-00805f9b34fb"
 tiles_found = 0
 
@@ -79,8 +79,12 @@ async def get_device_data(pq, device, _advertisement_data, tile_id = None, query
     #check if device has been processed yet
     if tile_id is None:
         # place the device on the processing queue
-        await pq.put((abs(device.rssi), device))
-        return ""
+        try:
+            await pq.put((abs(device.rssi), device))
+            return ""
+        except Exception as e:
+            # occasionally an exception is thrown when putting a device on the queue, but it still works fine
+            pass
     #info += pad(str(tiles_found), Pad_Lengths.DEVICE_NUM.value)
     info += pad(device.name, Pad_Lengths.NAME.value)
     info += device.address + "  "
@@ -98,7 +102,7 @@ async def get_device_data(pq, device, _advertisement_data, tile_id = None, query
 
 async def detection_callback(pq, device, advertisement_data):
     # Whenever a device is found...
-    global search_addr
+    global search_id
     global found_addr_list
     global tileUUID
     global known_addresses
@@ -106,13 +110,12 @@ async def detection_callback(pq, device, advertisement_data):
     if hasattr(advertisement_data, 'service_data'):
         if tileUUID in str(advertisement_data.service_data):
             # we found a tile
-            if search_addr == None:
-                # if not searching for any particular tile:
-                # exclude devices we don't want to appear
-                if device.address not in found_addr_list:
-                    # document only unique instances
-                    tiles_found += 1
-                    found_addr_list.append(device.address)
+            if device.address not in found_addr_list:
+                # document only unique instances
+                found_addr_list.append(device.address)
+                if search_id == None:
+                    # if not searching for any particular tile:
+                    # exclude devices we don't want to appear
                     # if device is known, give it a meaningful name
                     if device.address in known_addresses.values():
                         device.name = get_key(device.address, known_addresses)
@@ -121,14 +124,11 @@ async def detection_callback(pq, device, advertisement_data):
                     else:
                         device.name = "Unknown Tile"
                         print(await get_device_data(pq, device, advertisement_data), end="")
-            elif device.address == search_addr:
-                # set name to friendly name if known
-                if device.address in known_addresses.values():
-                    device.name = get_key(device.address, known_addresses)
-                print(f"{Formatting.INVERTED.value}----- Tile of interest found! -----\n {await get_device_data(pq, device, advertisement_data)} {Formatting.CLEAR.value}")
-                # since we found what we're looking for, exit
-                sys.exit(0)
+                else:
+                    # we are searching for a particular tile
+                    print(await get_device_data(pq, device, advertisement_data), end="")
 
+                
 class Tile_ID_Wrapper :
     def __init__(self, got_tile_id_evt):
         self.got_tile_id_evt = got_tile_id_evt
@@ -150,10 +150,10 @@ def tile_id_rsp_handler(tile_id_wrapper, _sender, data):
             print(f"unhandled rsp_code: {rsp_code}")
 
 async def get_tile_id(device):
-    for attempt in range(3):
+    for attempt in range(2):
         try:
-            print(f"Connecting to Tile @ {device.address} ({device.name}) - Attempt {attempt + 1}...")
-            async with BleakClient(device.address, timeout=20) as client:
+            print(f"Connecting to Tile @ {device.address} - Attempt {attempt + 1}...")
+            async with BleakClient(device.address, timeout=30) as client:
                 tile_id_wrapper = Tile_ID_Wrapper(asyncio.Event())
                 await client.start_notify(TILE_TOA_RSP_UUID, partial(tile_id_rsp_handler, tile_id_wrapper))
                 await client.write_gatt_char(TILE_TOA_CMD_UUID, data)
@@ -164,8 +164,10 @@ async def get_tile_id(device):
     return "too_many_retries"
 
 async def connector(pq):
+    # wait some time before connecting to make sure that we don't try to talk to the weaker connections first
     await asyncio.sleep(10)
     global scanning
+    global search_id
     while True: 
         if pq.empty() and scanning == False:
             return
@@ -178,42 +180,52 @@ async def connector(pq):
             result = await get_tile_id(device)
             if result == "too_many_retries" :
                 tile_id = pad("(Error: Too many retries)", Pad_Lengths.TILE_ID.value)
+            elif result.upper() == search_id.upper():
+                # tile of interest found
+                tile_id = result.upper()
+                print(await get_device_data(pq, device, None, tile_id))
+                print("Tile of Interest Found, exiting")
+                sys.exit(0)
             else:
                 tile_id = pad(str(result).upper(), Pad_Lengths.TILE_ID.value)
         else:
             tile_id = pad("(Weak connection -- Bring the Tile closer to read Tile ID)", Pad_Lengths.TILE_ID.value)
-        print(await get_device_data(pq, device, None, tile_id))
+        if search_id is None:
+            print(await get_device_data(pq, device, None, tile_id))
 
-async def main(addr = None, time = 80.0):
+async def main(id = None):
+    time = 80.0
     args = sys.argv[1:]
-    global search_addr
+    global search_id
     global tiles_found
     global scanning
     if len(args) == 0:
-        print(f"{Formatting.INVERTED.value} Searching for all Tile devices for {time} seconds... {Formatting.CLEAR.value}")
-        print_header()
+        print(f"{Formatting.INVERTED.value} Searching for all nearby Tile devices... {Formatting.CLEAR.value}")
     elif len(args) == 1:
-        time = float(args[0])
-        print(f"{Formatting.INVERTED.value} Searching for all Tile devices for {time} seconds... {Formatting.CLEAR.value}")
-        print_header()
-    elif len(args) == 2:
-        time = float(args[0])
-        addr = str(args[1])
-        search_addr = addr.upper()
-        print(f"{Formatting.INVERTED.value} Searching for Tile w/ address {search_addr} for {time} seconds... {Formatting.CLEAR.value}")
-        print_header()  
+        # if running in API:
+        #search_id = id
+        # if running in main:
+        search_id = str(args[0])        
+        print(f"{Formatting.INVERTED.value} Searching for Tile device with ID {search_id}... {Formatting.CLEAR.value}")
+    print_header()
+    # make the priority queue
     pq = asyncio.PriorityQueue()
+    # set up the connector task
     connector_future = asyncio.create_task(connector(pq))
+    # register the scanner and callback function
     scanner = BleakScanner()
     scanner.register_detection_callback(partial(detection_callback, pq))
+    # run scanner
     await scanner.start()
     await asyncio.sleep(time)
     await scanner.stop()
     scanning = False
+    # wait for the connector task to end before closing
     await connector_future
-    print("\nTiles found:", str(tiles_found))
 
-# Run the program, catching any ^Cs
+# TODO: finish search mode for a particular Tile ID
+
+# Run the program, catching any interrupts
 try: 
     asyncio.run(main())
 except KeyboardInterrupt:

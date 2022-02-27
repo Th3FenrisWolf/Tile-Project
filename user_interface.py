@@ -1,10 +1,13 @@
 import os, sys, time, random, re, asyncio, getpass
 from sqlite3 import connect
-from tile_programmable_songs import tps
 sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'pytile/pytile'))
 from api import async_login
 from pwinput import pwinput
 from aiohttp import ClientSession
+sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'tile_api/commands'))
+from song import Songs
+sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'scripts'))
+from known_tps import Known_Tps_two
 
 # variables
 user_email = ""
@@ -19,6 +22,8 @@ tile_choice_valid = False       # verifies that it's what it's supposed to be
 tile_selected = 0
 action_chosen = ""              # this is what will hold r, f, or t
 action_chosen_valid = False     # will be changed to true when verified as true
+song_chosen = ""
+song_number = 0
 
 # functions
 def slow_type(t):
@@ -34,16 +39,8 @@ async def connectToTileAccount() -> None:
     """Run!"""
     async with ClientSession() as session:
         api = await async_login(user_email, user_password, session)
-        slow_type("Successfully connected to Tile account")
+        print("Successfully connected to Tile account")
         tiles = await api.async_get_tiles()
-
-        count = 0
-        for tile_uuid, tile in tiles.items():
-            pass
-            #print(f"The Tile's name is {tile.name}")
-            #user_tiles[count] = tile_obj(tile.name, tile.uuid, tile.firmware_version)
-            #count+=1
-        #print(help(tile))   
         return tiles
 
 # Step 1. Have a little intro/explanation for this user interface and what it's for, how it'll work
@@ -108,26 +105,64 @@ if(tile_choice == 'm' and tile_choice_valid == True):
 #       Call the ring function with the tile id, auth key (need to get in this step), selected song, and selected volume
 #       After it's done, ask if they would like to exit or restart - if exit then cleanly disconnect and clear all the variables, if restart go back to step 4
     if(action_chosen.lower() == 'r' and action_chosen_valid):
-        #need to list all the possible songs
-        print("Possible songs to choose from are these: ")
+        # need to differentiate between the basic songs already loaded the the tps
+        tps_or_loaded = input("Would you like to choose a programmable song or a basic song?\nEnter 'p' for a programmable song and 'b' for basic song: ")
+        tps_or_loaded_valid = False
+        if(tps_or_loaded.lower() == 'p' or tps_or_loaded.lower() == 'b'):
+            tps_or_loaded_valid = True
+        while(not tps_or_loaded_valid):
+            tps_or_loaded = input(f"{tps_or_loaded} is not a valid option, please type either 'p' or 'b': ")
+            if(tps_or_loaded.lower() == 'p' or tps_or_loaded.lower() == 'b'):
+                tps_or_loaded_valid = True
+        
+        # tps songs listed and one chosen
+        if(tps_or_loaded == 'p' and tps_or_loaded_valid):
+            # go to scripts/known_tps.py and print out the names enumerated
+            for song_num, song in enumerate(Known_Tps_two):
+                print(f"{song_num+1}. {song.name}")
+            song_number = input("Which of these do you want to choose? Input that number: ")
+            song_chosen = Known_Tps_tow[song_number-1]
+
+
+
+
+        # basic songs listed and one chosen
+        if(tps_or_loaded == 'b' and tps_or_loaded_valid):
+            # go to tile_api/commands/song.py and list the songs enumerated
+            for song_num, song in enumerate(Songs):
+                print(f"{song_num+1}. {song.name}")
+            song_number = input("Which of these do you want to choose? Input that number: ")
+            song_chosen = Songs[song_number-1]
+
+    dummy = input("   ")
 
 #   Step firmware. List all the firmware versions enumerated -- and have the user choose one
-#                Call the tofu function with the tile id, auth key (need to get in this step), and selected firmware
-#                After it's done, ask if they would like to exit or restart - if exit then cleanly disconnect and clear all the variables, if restart go back to step 4
+#       Call the tofu function with the tile id, auth key (need to get in this step), and selected firmware
+#       After it's done, ask if they would like to exit or restart - if exit then cleanly disconnect and clear all the variables, if restart go back to step 4
 
-# Step tdi. List all tdi info
-#           After it's done, ask if they would like to exit or restart - if exit then cleanly disconnect and clear all the variables, if restart go back to step 4
+    if(action_chosen.lower() == 'f' and action_chosen_valid):
+        # need to list all the possible firmwares to choose from
+        print("Possible firmware versions to choose from are these: ")
+
+#    Step tdi. List all tdi info
+#       After it's done, ask if they would like to exit or restart - if exit then cleanly disconnect and clear all the variables, if restart go back to step 4
+
+    if(action_chosen.lower() == 't' and action_chosen_valid):
+        # just run tdi on the selected tile
+        print("Possible songs to choose from are these: ")
+
 
 # if selected to see all the tiles in the area
-# if(tile_choice =='a' and tile_choice_valid == True):
+if(tile_choice =='a' and tile_choice_valid == True):
     # need to call findTiles here - but an abbreviated version of the script
+    print("need to call findTiles")
 
 # Step 6.a Have the Tiles listed with a number and the name (if there), mac address, and Tile ID, have the user input a number (such as "1" for the first in the list) to select which one they want to choose
 
 # Step tdi. List all tdi info
 #           After it's done, ask if they would like to exit or restart - if exit then cleanly disconnect and clear all the variables, if restart go back to step 4
 
-# Step exit. Cleanly disconnect from the tile, call disconnect, clear all the variables
+# Step exit. Cleanly disconnect from the tile, call disconnect, clear all the variables - especially the password one for safety
 
 # Step dependancy script: create a dependancy script -- need to run a pip install bleak and pip install pytile and pip install pwinput
 
