@@ -81,7 +81,6 @@ while(not tile_choice_valid):
 
 # Step 5. If their Tiles, list all of the ones that are connected to their Tile account - can do ring, firmware update, or TDI for any of the Tiles in their account
 #         If all the Tiles in the area -- can do TDI for any of them
-
 tile_list_num = 1
 #tile_list = None
 
@@ -129,9 +128,10 @@ if(tile_choice == 'm' and tile_choice_valid == True):
             # go to scripts/known_tps.py and print out the names enumerated
             for song_num, song in enumerate(Known_Tps_two):
                 print(f"{song_num+1}. {song.name}")
-            song_number = input("Which of these do you want to choose? Input that number: ")
-            song_chosen = Known_Tps_two[song_number-1]
-
+            song_number = int(input("Which of these do you want to choose? Input that number: "))
+            for song_num, song in enumerate(Known_Tps_two):
+                if (song_num + 1) == song_number:
+                    song_chosen = song.name
 
 
 
@@ -140,9 +140,13 @@ if(tile_choice == 'm' and tile_choice_valid == True):
             # go to tile_api/commands/song.py and list the songs enumerated
             for song_num, song in enumerate(Songs):
                 print(f"{song_num+1}. {song.name}")
-            song_number = input("Which of these do you want to choose? Input that number: ")
-            song_chosen = Songs[song_number-1]
+            song_number = int(input("Which of these do you want to choose? Input that number: "))
+            for song_num, song in enumerate(Songs):
+                if (song_num + 1) == song_number:
+                    song_chosen = song.name
+    
 
+    print(song_chosen)
     dummy = input("   ")
 
 #   Step firmware. List all the firmware versions enumerated -- and have the user choose one
@@ -175,11 +179,12 @@ if(tile_choice =='a' and tile_choice_valid == True):
 
 # Step dependancy script: create a dependancy script -- need to run a pip install bleak and pip install pwinput and pip install aiohttp
 
-#random stuff
-#printing out tps
-        #absolute_path = os.path.abspath(__file__)
-        #file_directory = os.path.dirname(absolute_path)
-        #song_val = tps.Known_Tps(3)
-#
-        #my_path = os.path.join(file_directory, "Tile Programmable Songs (TPS)", song_val)
-        #print(my_path)
+# random stuff
+# printing out tps
+        # absolute_path = os.path.abspath(__file__)
+        # file_directory = os.path.dirname(absolute_path)
+        # song_val = tps.Known_Tps(3)
+        
+        # my_path = os.path.join(file_directory, "Tile Programmable Songs (TPS)", song_val)
+        # # sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'scripts'))
+        # print(my_path)
