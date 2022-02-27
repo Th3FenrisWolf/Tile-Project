@@ -141,8 +141,6 @@ if(tile_choice == 'm' and tile_choice_valid == True):
                 if (song_num + 1) == song_number:
                     song_chosen = song.name
 
-
-
         # basic songs listed and one chosen
         if(tps_or_loaded == 'b' and tps_or_loaded_valid):
             # go to tile_api/commands/song.py and list the songs enumerated
@@ -152,14 +150,16 @@ if(tile_choice == 'm' and tile_choice_valid == True):
             for song_num, song in enumerate(Songs):
                 if (song_num + 1) == song_number:
                     song_chosen = song.name
-    
-        print(song_chosen)
 
         #input the volume of whichever song needs to be played
-        song_volume = input("What volume would you like to play the song? Enter 1 for low, 2 for medium, and 3 for high: ")
-            #validate that it's 1, 2, or 3
+        
+        #validate that it's 1, 2, or 3
+        while(not song_volume_valid):
+            song_volume = input("What volume would you like to play the song? Enter 1 for low, 2 for medium, and 3 for high: ")
+            if(song_volume == 1 or song_volume == 2 or song_volume == 3):
+                song_volume_valid = True
 
-            #call ring
+        #call ring
 
         # end of ring stuff 
 
