@@ -24,6 +24,9 @@ action_chosen = ""              # this is what will hold r, f, or t
 action_chosen_valid = False     # will be changed to true when verified as true
 song_chosen = ""
 song_number = 0
+song_number_chosen = False      # not actually implemented currently but will eventually
+song_volume = 0
+song_volume_valid = False       # not actually impleneted currently but will eventually
 
 # functions
 def slow_type(t):
@@ -35,6 +38,7 @@ def slow_type(t):
     print('')
     time.sleep(1)
 
+# need to make it tell if your tile password or email are wrong and ask them to re-input it all, might need to make username and password input a function
 async def connectToTileAccount() -> None:
     """Run!"""
     async with ClientSession() as session:
@@ -58,6 +62,7 @@ user_password = pwinput("Please input the password that is associated with your 
 
 # Step 3. Done in background - connect with pyTile to the users account - get auth key here
 # Can connect to pyTile and can get all kinds of info (mac address) being important but still not the auth key even though it should be stored somewhere and should be able to access it somewhere. So also need to see if I can access the tile id here, that would be majorly helpful
+tile_list = asyncio.run(connectToTileAccount())
 
 # Step 4. Ask user if they would like to see a listing of all their Tiles or of all the available Tiles in the area ("m" for my Tiles, "a" for all in area)
 
@@ -79,7 +84,7 @@ tile_list_num = 1
 # if selected to see all their tiles
 if(tile_choice == 'm' and tile_choice_valid == True):
     print(f"Tiles connected to account are: ") 
-    tile_list = asyncio.run(connectToTileAccount())
+    #tile_list = asyncio.run(connectToTileAccount())
     #print(tile_list)
     #print(f"test type is {type(tile_list)}")
     for tile_uuid, tile in tile_list.items():
@@ -90,6 +95,11 @@ if(tile_choice == 'm' and tile_choice_valid == True):
     # Step 6.m Have the Tiles listed with a number and the name (if there), mac address, and Tile ID, have the user input a number (such as "1" for the first in the list) to select which one they want to choose
     tile_selected = int(input("\nSelect which one you would like by typing it numerically: "))
     print(list(tile_list.values())[tile_selected-1])
+    tile_list = list(tile_list.values())
+    tile_mac = tile_list[tile_selected -1].uuid
+    print(f"Tile's mac: {tile_mac}")
+    tile_auth = tile_list[tile_selected -1].auth_key
+    print(f"Tile's authkey: {tile_auth}")
 
     # Step 7.m If their Tiles - ask if they'd like to ring, do a firmware update, or tdi for their selected Tile ("r" for ring, "f" for firmware update, "t" for tdi)
     action_chosen = input("For the selected Tile please type 'r' to ring the Tile, 'f' to perform a firmware update, or 't' to list all the Tile's info: ")
@@ -120,19 +130,29 @@ if(tile_choice == 'm' and tile_choice_valid == True):
             # go to scripts/known_tps.py and print out the names enumerated
             for song_num, song in enumerate(Known_Tps_two):
                 print(f"{song_num+1}. {song.name}")
-            song_number = input("Which of these do you want to choose? Input that number: ")
-            song_chosen = Known_Tps_tow[song_number-1]
-
-
-
+            song_number = int(input("Which of these do you want to choose? Input that number: "))
+            print(f"Song_number type is: {type(song_number)}")
+            song_chosen = Known_Tps_two(song_number)
+            print(f"Song chosen: {song_chosen.name}")
 
         # basic songs listed and one chosen
         if(tps_or_loaded == 'b' and tps_or_loaded_valid):
             # go to tile_api/commands/song.py and list the songs enumerated
             for song_num, song in enumerate(Songs):
                 print(f"{song_num+1}. {song.name}")
-            song_number = input("Which of these do you want to choose? Input that number: ")
-            song_chosen = Songs[song_number-1]
+            song_number = int(input("Which of these do you want to choose? Input that number: "))
+            #not working
+            songs = list(Songs.values())
+            song_chosen = songs[song_number-1]
+            print(f"Song chosen: {song_chosen.name}")
+
+        #input the volume of whichever song needs to be played
+        song_volume = input("What volume would you like to play the song? Enter 1 for low, 2 for medium, and 3 for high: ")
+        #validate that it's 1, 2, or 3
+
+        #call ring
+
+    # end of ring stuff 
 
     dummy = input("   ")
 
@@ -164,7 +184,7 @@ if(tile_choice =='a' and tile_choice_valid == True):
 
 # Step exit. Cleanly disconnect from the tile, call disconnect, clear all the variables - especially the password one for safety
 
-# Step dependancy script: create a dependancy script -- need to run a pip install bleak and pip install pytile and pip install pwinput
+# Step dependancy script: create a dependancy script -- need to run a pip install bleak and pip install pwinput and pip install aiohttp
 
 #random stuff
 #printing out tps
