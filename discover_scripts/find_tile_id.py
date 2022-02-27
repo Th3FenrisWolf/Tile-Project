@@ -1,4 +1,5 @@
 import asyncio
+from re import search
 from bleak import BleakScanner, BleakClient
 from enum import Enum
 import sys, os
@@ -25,6 +26,7 @@ found_addr_list = []
 search_id = None
 tileUUID = "0000feed-0000-1000-8000-00805f9b34fb"
 tiles_found = 0
+found_tile_id = False
 
 # stuff used for getting the Tile ID
 TILE_TOA_CMD_UUID = "9d410018-35d6-f4dd-ba60-e7bd8dc491c0"
@@ -76,12 +78,16 @@ def print_header():
 
 async def get_device_data(pq, device, _advertisement_data, tile_id = None, querying = False) -> str:
     info = ""
+    global scanning
+    global search_id
+    global found_tile_id
     #check if device has been processed yet
     if tile_id is None:
         # place the device on the processing queue
         try:
-            await pq.put((abs(device.rssi), device))
-            return ""
+            if search_id is not None and not found_tile_id:
+                await pq.put((abs(device.rssi), device))
+                return ""
         except Exception as e:
             # occasionally an exception is thrown when putting a device on the queue, but it still works fine
             pass
@@ -163,13 +169,22 @@ async def get_tile_id(device):
             pass
     return "too_many_retries"
 
+def empty_queue(q: asyncio.Queue):
+    for _ in range(q.qsize()):
+        q.get_nowait()
+        q.task_done()
+    print("Queue cleared")
+
 async def connector(pq):
     # wait some time before connecting to make sure that we don't try to talk to the weaker connections first
     await asyncio.sleep(10)
     global scanning
     global search_id
+    global found_tile_id
     while True: 
-        if pq.empty() and scanning == False:
+        print("connector looping")
+        if (search_id is not None and found_tile_id) or (not scanning and pq.empty()):
+            print("stopping connector")
             return
         # pull device off the queue
         device = (await pq.get())[1]
@@ -182,10 +197,13 @@ async def connector(pq):
                 tile_id = pad("(Error: Too many retries)", Pad_Lengths.TILE_ID.value)
             elif result.upper() == search_id.upper():
                 # tile of interest found
+                found_tile_id = True
+                # empty_queue(pq)
                 tile_id = result.upper()
                 print(await get_device_data(pq, device, None, tile_id))
-                print("Tile of Interest Found, exiting")
-                sys.exit(0)
+                print("Tile of Interest Found")
+            elif result.upper() != search_id.upper() and search_id is not None:
+                print("Tile ID did not match")
             else:
                 tile_id = pad(str(result).upper(), Pad_Lengths.TILE_ID.value)
         else:
@@ -217,7 +235,13 @@ async def main(id = None):
     scanner.register_detection_callback(partial(detection_callback, pq))
     # run scanner
     await scanner.start()
-    await asyncio.sleep(time)
+    # TODO: clean this up
+    # better way to do this: https://stackoverflow.com/questions/37209864/interrupt-all-asyncio-sleep-currently-executing
+    time_slept = 0
+    while (search_id is not None and not found_tile_id) or (time_slept < time):
+        await asyncio.sleep(1)
+        time_slept += 1
+    print("stopping scanner")
     await scanner.stop()
     scanning = False
     # wait for the connector task to end before closing

@@ -26,6 +26,9 @@ action_chosen = ""              # this is what will hold r, f, or t
 action_chosen_valid = False     # will be changed to true when verified as true
 song_chosen = ""
 song_number = 0
+song_number_chosen = False      # not actually implemented currently but will eventually
+song_volume = 0
+song_volume_valid = False       # not actually impleneted currently but will eventually
 
 # Functions
 # Pretty Print
@@ -98,6 +101,11 @@ if(tile_choice == 'm' and tile_choice_valid == True):
     # Step 6.m Have the Tiles listed with a number and the name (if there), mac address, and Tile ID, have the user input a number (such as "1" for the first in the list) to select which one they want to choose
     tile_selected = int(input("\nSelect which one you would like by typing it numerically: "))
     print(list(tile_list.values())[tile_selected-1])
+    tile_list = list(tile_list.values())
+    tile_mac = tile_list[tile_selected -1].uuid
+    print(f"Tile's mac: {tile_mac}")
+    tile_auth = tile_list[tile_selected -1].auth_key
+    print(f"Tile's authkey: {tile_auth}")
 
     # Step 7.m If their Tiles - ask if they'd like to ring, do a firmware update, or tdi for their selected Tile ("r" for ring, "f" for firmware update, "t" for tdi)
     action_chosen = input("For the selected Tile please type 'r' to ring the Tile, 'f' to perform a firmware update, or 't' to list all the Tile's info: ")
@@ -145,9 +153,17 @@ if(tile_choice == 'm' and tile_choice_valid == True):
                 if (song_num + 1) == song_number:
                     song_chosen = song.name
     
+        print(song_chosen)
 
-    print(song_chosen)
-    dummy = input("   ")
+        #input the volume of whichever song needs to be played
+        song_volume = input("What volume would you like to play the song? Enter 1 for low, 2 for medium, and 3 for high: ")
+            #validate that it's 1, 2, or 3
+
+            #call ring
+
+        # end of ring stuff 
+
+        dummy = input("   ")
 
 #   Step firmware. List all the firmware versions enumerated -- and have the user choose one
 #       Call the tofu function with the tile id, auth key (need to get in this step), and selected firmware
@@ -184,7 +200,7 @@ if(tile_choice =='a' and tile_choice_valid == True):
         # absolute_path = os.path.abspath(__file__)
         # file_directory = os.path.dirname(absolute_path)
         # song_val = tps.Known_Tps(3)
-        
+
         # my_path = os.path.join(file_directory, "Tile Programmable Songs (TPS)", song_val)
         # # sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'scripts'))
         # print(my_path)
