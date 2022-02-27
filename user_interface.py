@@ -35,6 +35,7 @@ def slow_type(t):
     print('')
     time.sleep(1)
 
+# need to make it tell if your tile password or email are wrong and ask them to re-input it all, might need to make username and password input a function
 async def connectToTileAccount() -> None:
     """Run!"""
     async with ClientSession() as session:
@@ -58,6 +59,7 @@ user_password = pwinput("Please input the password that is associated with your 
 
 # Step 3. Done in background - connect with pyTile to the users account - get auth key here
 # Can connect to pyTile and can get all kinds of info (mac address) being important but still not the auth key even though it should be stored somewhere and should be able to access it somewhere. So also need to see if I can access the tile id here, that would be majorly helpful
+tile_list = asyncio.run(connectToTileAccount())
 
 # Step 4. Ask user if they would like to see a listing of all their Tiles or of all the available Tiles in the area ("m" for my Tiles, "a" for all in area)
 
@@ -79,7 +81,7 @@ tile_list_num = 1
 # if selected to see all their tiles
 if(tile_choice == 'm' and tile_choice_valid == True):
     print(f"Tiles connected to account are: ") 
-    tile_list = asyncio.run(connectToTileAccount())
+    #tile_list = asyncio.run(connectToTileAccount())
     #print(tile_list)
     #print(f"test type is {type(tile_list)}")
     for tile_uuid, tile in tile_list.items():
@@ -121,7 +123,7 @@ if(tile_choice == 'm' and tile_choice_valid == True):
             for song_num, song in enumerate(Known_Tps_two):
                 print(f"{song_num+1}. {song.name}")
             song_number = input("Which of these do you want to choose? Input that number: ")
-            song_chosen = Known_Tps_tow[song_number-1]
+            song_chosen = Known_Tps_two[song_number-1]
 
 
 
@@ -164,7 +166,7 @@ if(tile_choice =='a' and tile_choice_valid == True):
 
 # Step exit. Cleanly disconnect from the tile, call disconnect, clear all the variables - especially the password one for safety
 
-# Step dependancy script: create a dependancy script -- need to run a pip install bleak and pip install pytile and pip install pwinput
+# Step dependancy script: create a dependancy script -- need to run a pip install bleak and pip install pwinput and pip install aiohttp
 
 #random stuff
 #printing out tps
