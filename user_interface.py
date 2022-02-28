@@ -102,8 +102,8 @@ if(tile_choice == 'm' and tile_choice_valid == True):
     tile_selected = int(input("\nSelect which one you would like by typing it numerically: "))
     print(list(tile_list.values())[tile_selected-1])
     tile_list = list(tile_list.values())
-    tile_mac = tile_list[tile_selected -1].uuid
-    print(f"Tile's mac: {tile_mac}")
+    tile_id = tile_list[tile_selected -1].uuid
+    print(f"Tile's ID: {tile_id}")
     tile_auth = tile_list[tile_selected -1].auth_key
     print(f"Tile's authkey: {tile_auth}")
 
@@ -159,9 +159,9 @@ if(tile_choice == 'm' and tile_choice_valid == True):
             if(song_volume == 1 or song_volume == 2 or song_volume == 3):
                 song_volume_valid = True
 
-        #call ring
+        # call ring fuction which is in tile.py and might need to change that slightly
 
-        # end of ring stuff 
+    # end of ring stuff 
 
         dummy = input("   ")
 
