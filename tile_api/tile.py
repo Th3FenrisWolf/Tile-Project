@@ -12,6 +12,7 @@ from commands.tdi import *
 from commands.song import request_ring_and_wait_response, request_song_program, upload_custom_song, Strength, Songs
 from os import path
 from commands.tofu import request_tofu_ready, upload_firmware
+from get_mac_address import get_mac_address
 
 # random byte values, required as seen used in the assembly 
 sres = b"\x22" * 4
@@ -27,7 +28,7 @@ class Tile:
     def submit_async(self, awaitable):
         return asyncio.run_coroutine_threadsafe(awaitable, self._loop)
 
-    def __init__(self, mac_address: str, auth_key: bytes = None):
+    def __init__(self, tile_id: str, auth_key: bytes = None):
 
         self._start_async()
 
@@ -36,8 +37,10 @@ class Tile:
         self._cmd_sender_ended = False
         
         self.auth_key = auth_key
-        # bleak seems to require uppercase str, so this will catch if someone gave lowercase form
-        self.mac_address = mac_address.upper()
+
+        async def _get_mac_address(self, tile_id):
+            self.mac_address = await get_mac_address(tile_id)
+        self.submit_async(_get_mac_address(self, tile_id)).result()
 
         async def set_queue(self):
             self.send_queue = asyncio.Queue()

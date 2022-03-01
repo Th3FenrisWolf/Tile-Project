@@ -1,4 +1,5 @@
 import asyncio
+from re import search
 from bleak import BleakScanner, BleakClient
 from functools import partial
 from commands.tdi import Tdi_Cmd_Code, Tdi_Rsp_Code
@@ -95,7 +96,6 @@ async def connector(discovered_tiles_pq, search_id, scan_conditions):
                 scan_conditions.found_tile_mac = device.address
 
 async def get_mac_address(search_id, search_time = 80) -> str:
-
     # force search_id to be lowercase
     search_id = search_id.lower()
 

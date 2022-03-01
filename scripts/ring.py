@@ -1,18 +1,18 @@
 import sys, os
 from time import sleep
 from known_tiles import Known_Tiles
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'tile'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'tile_api'))
 
 # To make commonly used classes easy to import (without duplicating them), import them in tile/__init__.py
 # If tile/__init__.py has "from commands.ring import Songs" in it, I can do "from tile import Songs" here,
 # otherwise I'd have to do "from tile.commands.ring import Songs" here
-from tile_api import Tile, Songs, Strength
+from tile import Tile, Songs, Strength
 
-mac      = Known_Tiles.toy_mac.value
-auth_key = Known_Tiles.toy_auth.value
+id       = Known_Tiles.backpack_id.value
+auth_key = Known_Tiles.backpack_auth.value
 
 # Auth key is only necessary if the commands we want to send require it, otherwise it can be excluded
-tile = Tile("c5:3f:df:e9:0b:4a", auth_key)
+tile = Tile(id, auth_key)
 # Connect if the tile isn't connected, open a channel if there isn't already one open, and send the ring command
 tile.ring(Songs.FIND.value, Strength.LOW.value)
 
