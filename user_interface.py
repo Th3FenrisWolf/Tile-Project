@@ -12,7 +12,10 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'tile_api/commands'
 from song import Songs, Strength
 sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'scripts'))
 from known_tps import Known_Tps_two
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'tile_api'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'tile_firmwares/common_ones'))
+from os import listdir
+from os.path import isfile, join
+sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'tile_api'))
 from tile import Tile
 
 # variables
@@ -90,7 +93,7 @@ while(not tile_choice_valid):
 # Step 5. If their Tiles, list all of the ones that are connected to their Tile account - can do ring, firmware update, or TDI for any of the Tiles in their account
 #         If all the Tiles in the area -- can do TDI for any of them
 tile_list_num = 1
-#tile_list = None
+# tile_list = None
 
 # if selected to see all their tiles
 if(tile_choice == 'm' and tile_choice_valid == True):
@@ -112,6 +115,10 @@ if(tile_choice == 'm' and tile_choice_valid == True):
     print(f"Tile's ID: {tile_id}")
     tile_auth = tile_selected.auth_key
     print(f"Tile's authkey: {tile_auth}")
+
+    print(type(tile_id))
+    API_tile = Tile(tile_id, tile_auth)
+    API_tile.ring(Songs.FIND.value, Strength.LOW.value)
 
     # tile_selected is a pytile tile not our tile, so we cant ring it yet
     # TODO wait for ryan and tim to fix tile instantiation
@@ -181,14 +188,30 @@ if(tile_choice == 'm' and tile_choice_valid == True):
     if(action_chosen.lower() == 'f' and action_chosen_valid):
         # need to list all the possible firmwares to choose from
         print("Possible firmware versions to choose from are these: ")
+        mypath = "./tile_firmwares"
+        onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+        firmware_num = 1
+        for b in onlyfiles:
+            print(f"{firmware_num}. {b}")
+            firmware_num+=1
+        
+    dummy = input("     ")
 
 #    Step tdi. List all tdi info
 #       After it's done, ask if they would like to exit or restart - if exit then cleanly disconnect and clear all the variables, if restart go back to step 4
 
     if(action_chosen.lower() == 't' and action_chosen_valid):
         # just run tdi on the selected tile
-        print("Possible songs to choose from are these: ")
+        print("tile info for the selected tile, just call tdi on it and also print out uuid, authkey, etc ")
 
+        # TODO access the tile here
+
+        print(f"{Tile.name}'s hardware version: {Tile.hardware_version}")
+        print(f"{Tile.name}'s firmware version: {Tile.firmware_version}")
+        print(f"{Tile.name}'s ID: {Tile.uuid}")
+        print(f"{Tile.name}'s authkey: {Tile.authkey}")
+        print(f"{Tile.name}'s latitude and longitude: {Tile.latitude}, {Tile.longitude}")
+        
 
 # if selected to see all the tiles in the area
 if(tile_choice =='a' and tile_choice_valid == True):
@@ -201,8 +224,9 @@ if(tile_choice =='a' and tile_choice_valid == True):
 #           After it's done, ask if they would like to exit or restart - if exit then cleanly disconnect and clear all the variables, if restart go back to step 4
 
 # Step exit. Cleanly disconnect from the tile, call disconnect, clear all the variables - especially the password one for safety
-
-# Step dependancy script: create a dependancy script -- need to run a pip install bleak and pip install pwinput and pip install aiohttp
+# need to call disconnect here and clear the username and password variables
+user_email = ""
+user_password = ""
 
 # random stuff
 # printing out tps

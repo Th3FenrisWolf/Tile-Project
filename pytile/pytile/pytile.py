@@ -7,7 +7,7 @@ import base64
 _LOGGER = logging.getLogger(__name__)
 
 
-class Tile:
+class PyTile:
     """Define a Tile."""
 
     def __init__(
