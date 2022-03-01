@@ -1,5 +1,5 @@
 # this file is used to identify manufacturers of bluetooth devices
-# used by discover.py
+# used by discover_bt_devices.py
 # source: https://github.com/hbldh/bleak/blob/develop/bleak/backends/_manufacturers.py
 
 MANUFACTURERS = {
