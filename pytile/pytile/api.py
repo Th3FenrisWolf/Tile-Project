@@ -9,7 +9,7 @@ from aiohttp import ClientSession
 from aiohttp.client_exceptions import ClientError
 
 from errors import InvalidAuthError, RequestError
-from tile import Tile
+from pytile import PyTile
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -74,7 +74,7 @@ class API:  # pylint: disable=too-many-instance-attributes
 
         return data
 
-    async def async_get_tiles(self) -> Dict[str, Tile]:
+    async def async_get_tiles(self) -> Dict[str, PyTile]:
         """Get all active Tiles from the user's account."""
         states = await self._async_request("get", "tiles/tile_states")
 
@@ -86,7 +86,7 @@ class API:  # pylint: disable=too-many-instance-attributes
         results = await asyncio.gather(*details_tasks.values())
 
         return {
-            tile_uuid: Tile(self._async_request, tile_data)
+            tile_uuid: PyTile(self._async_request, tile_data)
             for tile_uuid, tile_data, in zip(details_tasks, results)
         }
 

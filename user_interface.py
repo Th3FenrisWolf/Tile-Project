@@ -12,7 +12,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'tile_api/commands'
 from song import Songs, Strength
 sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'scripts'))
 from known_tps import Known_Tps_two
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'tile_api'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'tile_api'))
 from tile import Tile
 
 # variables
@@ -90,7 +90,7 @@ while(not tile_choice_valid):
 # Step 5. If their Tiles, list all of the ones that are connected to their Tile account - can do ring, firmware update, or TDI for any of the Tiles in their account
 #         If all the Tiles in the area -- can do TDI for any of them
 tile_list_num = 1
-#tile_list = None
+# tile_list = None
 
 # if selected to see all their tiles
 if(tile_choice == 'm' and tile_choice_valid == True):
@@ -112,6 +112,10 @@ if(tile_choice == 'm' and tile_choice_valid == True):
     print(f"Tile's ID: {tile_id}")
     tile_auth = tile_selected.auth_key
     print(f"Tile's authkey: {tile_auth}")
+
+    print(type(tile_id))
+    API_tile = Tile(tile_id, tile_auth)
+    API_tile.ring(Songs.FIND.value, Strength.LOW.value)
 
     # tile_selected is a pytile tile not our tile, so we cant ring it yet
     # TODO wait for ryan and tim to fix tile instantiation
