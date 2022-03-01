@@ -1,18 +1,22 @@
 import os, sys, time, random, re, asyncio, getpass
 from sqlite3 import connect
 
+from tile_api.commands.song import Strength
+
 sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'pytile/pytile'))
 from api import async_login
 from pwinput import pwinput
 from aiohttp import ClientSession
 from errors import InvalidAuthError
 sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'tile_api/commands'))
-from song import Songs
+from song import Songs, Strength
 sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'scripts'))
 from known_tps import Known_Tps_two
 sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'tile_firmwares/common_ones'))
 from os import listdir
 from os.path import isfile, join
+sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'tile_api'))
+from tile import Tile
 
 # variables
 user_email = ""
@@ -24,7 +28,8 @@ tile_cmd = ""                   # set to r, t, or f, no longer than one characte
 tile_cmd_valid = False          # set to true when it is just f, t, or r and nothing else
 tile_choice = ""                # set to m for my tiles or a or all tiles
 tile_choice_valid = False       # verifies that it's what it's supposed to be
-tile_selected = 0
+tile_selected = None
+num_selected = 0
 action_chosen = ""              # this is what will hold r, f, or t
 action_chosen_valid = False     # will be changed to true when verified as true
 song_chosen = ""
@@ -88,7 +93,7 @@ while(not tile_choice_valid):
 # Step 5. If their Tiles, list all of the ones that are connected to their Tile account - can do ring, firmware update, or TDI for any of the Tiles in their account
 #         If all the Tiles in the area -- can do TDI for any of them
 tile_list_num = 1
-#tile_list = None
+# tile_list = None
 
 # if selected to see all their tiles
 if(tile_choice == 'm' and tile_choice_valid == True):
@@ -102,13 +107,21 @@ if(tile_choice == 'm' and tile_choice_valid == True):
             tile_list_num+=1
 
     # Step 6.m Have the Tiles listed with a number and the name (if there), mac address, and Tile ID, have the user input a number (such as "1" for the first in the list) to select which one they want to choose
-    tile_selected = int(input("\nSelect which one you would like by typing it numerically: "))
-    print(list(tile_list.values())[tile_selected-1])
+    num_selected = int(input("\nSelect which one you would like by typing it numerically: "))
+    print(list(tile_list.values())[num_selected-1])
     tile_list = list(tile_list.values())
-    tile_id = tile_list[tile_selected -1].uuid
+    tile_selected = tile_list[num_selected -1]
+    tile_id = tile_selected.uuid
     print(f"Tile's ID: {tile_id}")
-    tile_auth = tile_list[tile_selected -1].auth_key
+    tile_auth = tile_selected.auth_key
     print(f"Tile's authkey: {tile_auth}")
+
+    print(type(tile_id))
+    API_tile = Tile(tile_id, tile_auth)
+    API_tile.ring(Songs.FIND.value, Strength.LOW.value)
+
+    # tile_selected is a pytile tile not our tile, so we cant ring it yet
+    # TODO wait for ryan and tim to fix tile instantiation
 
     # Step 7.m If their Tiles - ask if they'd like to ring, do a firmware update, or tdi for their selected Tile ("r" for ring, "f" for firmware update, "t" for tdi)
     action_chosen = input("For the selected Tile please type 'r' to ring the Tile, 'f' to perform a firmware update, or 't' to list all the Tile's info: ")

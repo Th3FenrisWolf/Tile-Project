@@ -6,7 +6,7 @@ import aiohttp
 import pytest
 
 from pytile import async_login
-from pytile.tile import Tile
+from pytile.tile import PyTile
 
 from .common import (
     TILE_CLIENT_UUID,
@@ -69,7 +69,7 @@ async def test_get_tiles(aresponses, create_session_response):
         tiles = await api.async_get_tiles()
         assert len(tiles) == 1
         tile = tiles[TILE_TILE_UUID]
-        assert isinstance(tile, Tile)
+        assert isinstance(tile, PyTile)
         assert str(tile) == f"<Tile uuid={TILE_TILE_UUID} name={TILE_TILE_NAME}>"
         assert tile.accuracy == 13.496111
         assert tile.altitude == 0.4076319168123
