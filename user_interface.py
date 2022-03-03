@@ -168,8 +168,7 @@ if(tile_choice == 'm' and tile_choice_valid == True):
             time.sleep(10)
             #choose volume later
             print('after sleep')
-            API_tile.ring(Songs.FIND.value, Strength.LOW.value)
-            print('has rung the song')
+        #end of choosing programmable song 
 
         # basic songs listed and one chosen
         if(tps_or_loaded == 'b' and tps_or_loaded_valid):
@@ -182,6 +181,8 @@ if(tile_choice == 'm' and tile_choice_valid == True):
                     song_chosen = song.name
             #API_tile.ring(song_chosen.FIND.value, Strength.LOW.value)
 
+        API_tile.ring(Songs.FIND.value, Strength.LOW.value)
+        print('has rung the song')
         #input the volume of whichever song needs to be played
         
         #validate that it's 1, 2, or 3
