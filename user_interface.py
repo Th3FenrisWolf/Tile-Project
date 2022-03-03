@@ -56,6 +56,8 @@ async def connectToTileAccount() -> None:
         api = await async_login(user_email, user_password, session)
         print("Successfully connected to Tile account")
         tiles = await api.async_get_tiles()
+        time.sleep(1)
+        print('sleeping til tiles are found')
         return tiles
 
 # TODO Explain UI to User
@@ -75,7 +77,9 @@ while True:
 
     # Connect to Account - from Pytile
     try:
-        tile_list = asyncio.run(connectToTileAccount())
+        tile_list = asyncio.get_event_loop().run_until_complete(connectToTileAccount())
+        time.sleep(1)
+        print('sleeping after asyncio run is called to connect to tile account')
         break
     except InvalidAuthError as err:
         print("Invalid Authentication")
@@ -119,6 +123,8 @@ if(tile_choice == 'm' and tile_choice_valid == True):
     print(type(tile_id))
     API_tile = Tile(tile_id, tile_auth)
     API_tile.ring(Songs.FIND.value, Strength.LOW.value)
+    API_tile.disconnect()
+    print('has successfully disconnected')
 
     # tile_selected is a pytile tile not our tile, so we cant ring it yet
     # TODO wait for ryan and tim to fix tile instantiation
