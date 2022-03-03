@@ -62,7 +62,7 @@ async def connectToTileAccount() -> None:
 
 # TODO Explain UI to User
 print("_"*140+"\n")
-print("\tHello! Welcome to the (reTOAblepy or reTOAble or reTOApy or something like that) API which is used to control a a Tile Tracker.")
+print("\tHello! Welcome to the reTOAble API which is used to control a a Tile Tracker.")
 print("_"*140+"\n")
 
 # Will Loop Until Valid Authentication
@@ -181,6 +181,8 @@ if(tile_choice == 'm' and tile_choice_valid == True):
                     song_chosen = song.name
             #API_tile.ring(song_chosen.FIND.value, Strength.LOW.value)
 
+        # TODO 
+        
         API_tile.ring(Songs.FIND.value, Strength.LOW.value)
         print('has rung the song')
         #input the volume of whichever song needs to be played
