@@ -112,19 +112,19 @@ if(tile_choice == 'm' and tile_choice_valid == True):
 
     # Step 6.m Have the Tiles listed with a number and the name (if there), mac address, and Tile ID, have the user input a number (such as "1" for the first in the list) to select which one they want to choose
     num_selected = int(input("\nSelect which one you would like by typing it numerically: "))
-    print(list(tile_list.values())[num_selected-1])
+    #print(list(tile_list.values())[num_selected-1])
     tile_list = list(tile_list.values())
     tile_selected = tile_list[num_selected -1]
     tile_id = tile_selected.uuid
-    print(f"Tile's ID: {tile_id}")
+    #print(f"Tile's ID: {tile_id}")
     tile_auth = tile_selected.auth_key
-    print(f"Tile's authkey: {tile_auth}")
+    #print(f"Tile's authkey: {tile_auth}")
 
-    print(type(tile_id))
+    #print(type(tile_id))
     API_tile = Tile(tile_id, tile_auth)
     API_tile.ring(Songs.FIND.value, Strength.LOW.value)
-    API_tile.disconnect()
-    print('has successfully disconnected')
+    #API_tile.disconnect()
+    #print('has successfully disconnected')
 
     # tile_selected is a pytile tile not our tile, so we cant ring it yet
     # TODO wait for ryan and tim to fix tile instantiation
@@ -162,6 +162,14 @@ if(tile_choice == 'm' and tile_choice_valid == True):
             for song_num, song in enumerate(Known_Tps_two):
                 if (song_num + 1) == song_number:
                     song_chosen = song.name
+                    print(song_chosen)
+            API_tile.send_custom_song(Known_Tps_two[song_chosen].value)
+            print('sent song')
+            time.sleep(10)
+            #choose volume later
+            print('after sleep')
+            API_tile.ring(Songs.FIND.value, Strength.LOW.value)
+            print('has rung the song')
 
         # basic songs listed and one chosen
         if(tps_or_loaded == 'b' and tps_or_loaded_valid):
@@ -172,6 +180,7 @@ if(tile_choice == 'm' and tile_choice_valid == True):
             for song_num, song in enumerate(Songs):
                 if (song_num + 1) == song_number:
                     song_chosen = song.name
+            #API_tile.ring(song_chosen.FIND.value, Strength.LOW.value)
 
         #input the volume of whichever song needs to be played
         
@@ -233,6 +242,7 @@ if(tile_choice =='a' and tile_choice_valid == True):
 # need to call disconnect here and clear the username and password variables
 user_email = ""
 user_password = ""
+API_tile.disconnect()
 
 # random stuff
 # printing out tps

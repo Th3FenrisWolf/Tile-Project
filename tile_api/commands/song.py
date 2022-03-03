@@ -66,7 +66,7 @@ def handle_song_rsp(tile: 'Tile', rsp_payload: bytes):
         tile._song_block_ok_rsp_evt.set()
     elif song_rsp_code == Song_Rsp_Code.PLAY_OK.value:
         tile._song_play_ok_rsp_evt.set()
-    elif song_rsp_code == Song_Rsp_Code.PROGRAM_COMPLETE:
+    elif song_rsp_code == Song_Rsp_Code.PROGRAM_COMPLETE.value:
         tile._song_block_ok_rsp_evt.set()
     else:
         print(f"not handling song rsp {song_rsp_code.hex()}")
