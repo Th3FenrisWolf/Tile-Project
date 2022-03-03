@@ -4,6 +4,7 @@ from bleak import BleakScanner, BleakClient
 from functools import partial
 from commands.tdi import Tdi_Cmd_Code, Tdi_Rsp_Code
 from toa import Toa_Cmd_Code, Toa_Rsp_Code
+import itertools
 
 # only connections with an RSSI better than this will be attempted
 RSSI_SEARCH_THRESHOLD = -75
@@ -27,6 +28,9 @@ TILE_TOA_RSP_UUID = "9d410019-35d6-f4dd-ba60-e7bd8dc491c0"
 TOKEN = b"\x00" * 4
 TOA_CONNECTIONLESS_CID = b"\x00"
 TDI_GET_TILE_ID_CMD_PAYLOAD = TOA_CONNECTIONLESS_CID + TOKEN + Toa_Cmd_Code.TDI.value + Tdi_Cmd_Code.tile_id.value
+
+# unique sequence count
+counter = itertools.count()
 
 class Tile_ID_Wrapper:
     def __init__(self, got_tile_id_evt):
@@ -72,7 +76,7 @@ async def detection_callback(discovered_tiles_pq, device, advertisement_data):
             # document only unique instances
             detection_callback.found_addr_set.add(device.address)
             # place the device on the discovered tiles processing queue for the connector to use
-            await discovered_tiles_pq.put((abs(device.rssi), device))
+            await discovered_tiles_pq.put((device.rssi, next(counter), device))
 
 async def connector(discovered_tiles_pq, search_id, scan_conditions):
     # wait some time before connecting to make sure that we don't try to talk to the weaker connections first
@@ -85,7 +89,7 @@ async def connector(discovered_tiles_pq, search_id, scan_conditions):
         if scan_conditions.found_tile_mac or (not scan_conditions.scanning and discovered_tiles_pq.empty()):
             return
         # pull device off the queue
-        device = (await discovered_tiles_pq.get())[1]
+        device = (await discovered_tiles_pq.get())[-1]
         # Determine whether Tile is in range
         if int(device.rssi) > RSSI_SEARCH_THRESHOLD: 
             # if in range, get the Tile ID
