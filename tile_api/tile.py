@@ -39,7 +39,13 @@ class Tile:
         self.auth_key = auth_key
 
         async def _get_mac_address(self, tile_id):
-            self.mac_address = await get_mac_address(tile_id)
+            mac = await get_mac_address(tile_id)
+            if mac:
+                self.mac_address = mac
+            else:
+                # no mac address found, throw exception
+                raise Exception("No MAC address found for given Tile ID")
+            
         self.submit_async(_get_mac_address(self, tile_id)).result()
 
         async def set_queue(self):

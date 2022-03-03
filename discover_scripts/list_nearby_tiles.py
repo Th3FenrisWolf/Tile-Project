@@ -18,12 +18,6 @@ from toa import Toa_Cmd_Code, Toa_Rsp_Code
 #   python3 findTiles 120
 # to find specifically the Tile with address E6:9E:55:1A:91:28:
 #   python3 findTiles 60 E6:9E:55:1A:91:28
-# 
-# After finding your relevant Tile(s), we recommend putting its MAC into
-#   /scripts/tile_info.py -- this will allow you to get the Tile ID & firmware
-#   We have identified that any firmware after 25.04.06.0 randomizes its MAC address
-#   about every ~ 10-30 minutes
-
 
 known_devices = {
     # Change this dictionary to your own devices and known MAC addresses as you find them
@@ -54,7 +48,7 @@ class Display_Attributes(Enum):
     ADDRESS = True
     METADATA = False  # a lot of redundant information
     RSSI = True  # recommended to leave on
-    INTERPRET_RSSI = False  # - displays connection strength - RSSI must be on to work
+    INTERPRET_RSSI = True  # - displays connection strength - RSSI must be on to work
     UUIDS = False
     ADVERTISEMENT_DATA = False
     TILE_ID = False

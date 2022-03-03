@@ -6,7 +6,7 @@ from commands.tdi import Tdi_Cmd_Code, Tdi_Rsp_Code
 from toa import Toa_Cmd_Code, Toa_Rsp_Code
 
 # only connections with an RSSI better than this will be attempted
-RSSI_SEARCH_THRESHOLD = -70
+RSSI_SEARCH_THRESHOLD = -75
 
 # connector wait time (in seconds) before processing PQ of devices found
 # (This ensures that we do not try to talk to a device with a bad connection first) --
@@ -15,7 +15,7 @@ DELAY_START = 10
 
 # for bleak connnection
 # max number of times the connector will try to get the tile ID from the tile
-MAX_CONNECTION_ATTEMPTS = 2
+MAX_CONNECTION_ATTEMPTS = 3
 CONNECTION_TIMEOUT = 30 # number of seconds per connection attempt before retrying
 
 # UUIDs unique to Tile to identify sent and received commands
@@ -87,7 +87,7 @@ async def connector(discovered_tiles_pq, search_id, scan_conditions):
         # pull device off the queue
         device = (await discovered_tiles_pq.get())[1]
         # Determine whether Tile is in range
-        if int(device.rssi) > RSSI_SEARCH_THRESHOLD:
+        if int(device.rssi) > RSSI_SEARCH_THRESHOLD: 
             # if in range, get the Tile ID
             tile_id = await get_tile_id(device)
             
@@ -115,19 +115,26 @@ async def get_mac_address(search_id, search_time = 80) -> str:
     for _ in range(search_time):
         await asyncio.sleep(1)
         if scan_conditions.found_tile_mac:
-            return scan_conditions.found_tile_mac
+            break
     else:
         # TODO throw exception or something
         print("ERROR never found mac address for given tile id")
-        
+    
+    if not scan_conditions.found_tile_mac:
+        scan_conditions.found_tile_mac = None
+
     await scanner.stop()
     scan_conditions.scanning = False
     # wait for the connector task to end before closing
     await connector_future
+    return scan_conditions.found_tile_mac
 
-
+import time
 if __name__ == '__main__':
     try:
-        print(asyncio.run(get_mac_address("EA46ECA47D441269")))
+        start = time.time()
+        print(asyncio.run(get_mac_address("615BA301A0F17F22")))
+        end = time.time()
+        print(f"({str(end - start)[:4]} seconds)")
     except KeyboardInterrupt:
         print("\nScanner terminated early")
