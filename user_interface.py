@@ -1,5 +1,5 @@
 import os, sys, time, random, re, asyncio, getpass
-from sqlite3 import connect
+from shutil import get_terminal_size
 
 from tile_api.commands.song import Strength
 
@@ -37,8 +37,8 @@ song_number = 0
 song_number_chosen = False      # not actually implemented currently but will eventually
 song_volume = 0
 song_volume_valid = False       # not actually impleneted currently but will eventually
+terminal_width = get_terminal_size().columns
 
-# Functions
 # Pretty Print
 def slow_type(t):
     typing_speed = 80 #wpm
@@ -50,7 +50,7 @@ def slow_type(t):
     time.sleep(1)
 
 # Check Auth
-async def connectToTileAccount() -> None:
+async def getPyTilesFromAccount() -> None:
     """Run!"""
     async with ClientSession() as session:
         api = await async_login(user_email, user_password, session)
@@ -61,9 +61,15 @@ async def connectToTileAccount() -> None:
         return tiles
 
 # TODO Explain UI to User
-print("_"*140+"\n")
-print("\tHello! Welcome to the reTOAble API which is used to control a a Tile Tracker.")
-print("_"*140+"\n")
+print("_"*terminal_width+"\n")
+print("        _____ _____  ___  _     _      ")
+print("       |_   _|  _  |/ _ \| |   | |     ")
+print(" _ __ ___| | | | | / /_\ \ |__ | | ___ ")
+print("| '__/ _ \ | | | | |  _  | '_ \| |/ _ \\")
+print("| | |  __/ | \ \_/ / | | | |_) | |  __/")
+print("|_|  \___\_/  \___/\_| |_/_.__/|_|\___|\n")
+print("An API control your Tile Trackers.")
+print("_"*terminal_width+"\n")
 
 # Will Loop Until Valid Authentication
 while True:
@@ -77,7 +83,7 @@ while True:
 
     # Connect to Account - from Pytile
     try:
-        tile_list = asyncio.get_event_loop().run_until_complete(connectToTileAccount())
+        tile_list = asyncio.get_event_loop().run_until_complete(getPyTilesFromAccount())
         time.sleep(1)
         print('sleeping after asyncio run is called to connect to tile account')
         break
@@ -102,7 +108,7 @@ tile_list_num = 1
 # if selected to see all their tiles
 if(tile_choice == 'm' and tile_choice_valid == True):
     print(f"Tiles connected to account are: ") 
-    #tile_list = asyncio.run(connectToTileAccount())
+    #tile_list = asyncio.run(getPyTilesFromAccount())
     #print(tile_list)
     #print(f"test type is {type(tile_list)}")
     for tile_uuid, tile in tile_list.items():
