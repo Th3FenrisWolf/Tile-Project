@@ -87,7 +87,7 @@ def main():
         tile_list = getPyTiles()
 
         print(f"Tiles connected to account are: ") 
-        for tile_index, tile in tile_list.values():
+        for tile_index, tile in enumerate(tile_list.values()):
             if tile.kind == "TILE":
                 print(f"{tile_index + 1}. {tile.name}")
 
@@ -101,8 +101,10 @@ def main():
         tile_auth = tile_selected.auth_key
 
         # attempt to connect to this tile
+        print("Attempting to connect (please wait)")
         API_tile = Tile(tile_id, tile_auth)
         # ring after connect to show success
+        print("Connected")
         API_tile.ring(Songs.ACTIVE.value, Strength.LOW.value)
 
         # Step 7.m If their Tiles - ask if they'd like to ring, do a firmware update, or tdi for their selected Tile ("r" for ring, "f" for firmware update, "t" for tdi)
@@ -124,6 +126,9 @@ def main():
             while(tps_or_loaded not in tps_or_loaded_valid_options):
                 tps_or_loaded = input(f"{tps_or_loaded} is not a valid option, please type either 'p' or 'b': ")
             
+            # default to FIND / custom song
+            song_number_code = Songs.FIND.value
+
             # tps songs listed and one chosen
             if(tps_or_loaded == 'p'):
                 # go to scripts/known_tps.py and print out the names enumerated
@@ -143,20 +148,21 @@ def main():
                 for song_num, song in enumerate(Songs):
                     print(f"{song_num+1}. {song.name}")
                 song_number = int(input("Which of these do you want to choose? Input that number: "))
-                for song_num, song in enumerate(Songs):
-                    if (song_num + 1) == song_number:
-                        song_chosen = song.name
+                # TODO validate
+                song_chosen = [e for e in Songs][song_number - 1]
+                song_number_code = song_chosen.value
 
-            API_tile.ring(Songs.FIND.value, Strength.LOW.value)
             #input the volume of whichever song needs to be played
-            
-            #validate that it's 1, 2, or 3
-            while(not song_volume_valid):
-                song_volume = input("What volume would you like to play the song? Enter 1 for low, 2 for medium, and 3 for high: ")
-                if(song_volume == 1 or song_volume == 2 or song_volume == 3):
-                    song_volume_valid = True
+            song_volume = int(input("What volume would you like to play the song? Enter 1 for low, 2 for medium, and 3 for high: "))
 
+            #validate that it's 1, 2, or 3
+            while(song_volume not in range(1, 4)):
+                song_volume = int(input(f"{song_volume} is not a valid option, please enter 1 for low, 2 for medium, and 3 for high: "))
+
+    
             # call ring fuction which is in tile.py and might need to change that slightly
+            print(f"Playing {song_chosen.name}")
+            API_tile.ring(song_number_code, song_volume.to_bytes(1, "little"))
 
         # Step firmware. List all the firmware versions enumerated -- and have the user choose one
         # Call the tofu function with the tile id, auth key (need to get in this step), and selected firmware
