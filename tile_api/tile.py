@@ -113,6 +113,28 @@ class Tile:
             return self._hw_version
         return self.submit_async(get_hw_version(self)).result()
 
+    @property
+    def curr_song_id(self) -> int:
+        async def _create_song_map_rsp_evt(self):
+            self._song_map_rsp_evt = asyncio.Event()    
+
+        # create async event if it does not exist or clear it
+        if hasattr(self, '_song_map_rsp_evt'):
+            self._song_map_rsp_evt.clear()
+        else:
+            self.submit_async(_create_song_map_rsp_evt(self))
+        
+        # request song id
+        from commands.song import request_read_song_map
+        self.submit_async(request_read_song_map(self))
+
+        # wait for response
+        async def _wait_for_song_map_rsp(self):
+            await self._song_map_rsp_evt.wait()
+        
+        self.submit_async(_wait_for_song_map_rsp(self)).result()
+
+        return self._curr_song_id
 
     # NOTE: This function should essentially pass everything along to ring.py, where it actually sends the command.
     #       This functionality, however, does need to be accessible via calling Tile.ring according to CCSW
@@ -148,6 +170,13 @@ class Tile:
 
         self.submit_async(_create_song_program_ready_rsp_evt(self)).result()
         self.submit_async(_create_song_block_ok_rsp_evt(self)).result()
+
+        # verify that song is not already currently programmed song
+        with open(file_path, 'rb') as f:
+            # looking at song_hdr_info_t struct, offset 2 is a uint16_t that is the song_id
+            file_song_id = int.from_bytes(f.read(4)[2:4], 'little')
+            if self.curr_song_id == file_song_id:
+                return
 
         file_size = path.getsize(file_path)
 

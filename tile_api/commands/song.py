@@ -68,6 +68,9 @@ def handle_song_rsp(tile: 'Tile', rsp_payload: bytes):
         tile._song_play_ok_rsp_evt.set()
     elif song_rsp_code == Song_Rsp_Code.PROGRAM_COMPLETE.value:
         tile._song_block_ok_rsp_evt.set()
+    elif song_rsp_code == Song_Rsp_Code.SONG_MAP.value:
+        tile._curr_song_id = int.from_bytes(rsp_payload[2:4], byteorder='little')
+        tile._song_map_rsp_evt.set()
     else:
         print(f"not handling song rsp {song_rsp_code.hex()}")
 
@@ -89,6 +92,10 @@ async def request_song_program(tile: 'Tile', file_size: int):
     song_index_to_overwrite = (1).to_bytes(1, 'little')
     payload = Song_Cmd_Code.PROGRAM.value + song_index_to_overwrite + file_size.to_bytes(2, "little")
     await send_channel_cmd(tile, Toa_Cmd_Code.SONG, payload)
+
+async def request_read_song_map(tile: 'Tile'):
+    from toa import Toa_Cmd_Code, send_channel_cmd
+    await send_channel_cmd(tile, Toa_Cmd_Code.SONG, Song_Cmd_Code.READ_SONG_MAP.value)
 
 async def upload_custom_song(tile: 'Tile', file_path: str):
     from crc import crc16
