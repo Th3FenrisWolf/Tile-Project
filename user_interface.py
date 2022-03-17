@@ -11,7 +11,7 @@ from api import async_login
 sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'tile_api/commands'))
 from song import Songs, Strength
 sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'scripts'))
-from known_tps import Known_Tps_two
+from known_tps import Known_Tps
 sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'tile_firmwares/common_ones'))
 from os import listdir
 from os.path import isfile, join
@@ -132,11 +132,11 @@ def main():
             # tps songs listed and one chosen
             if(tps_or_loaded == 'p'):
                 # go to scripts/known_tps.py and print out the names enumerated
-                for song_num, song in enumerate(Known_Tps_two):
+                for song_num, song in enumerate(Known_Tps):
                     print(f"{song_num+1}. {song.name}")
                 song_number = int(input("Which of these do you want to choose? Input that number: "))
                 # TODO validate
-                song_chosen = [e for e in Known_Tps_two][song_num - 1]
+                song_chosen = [e for e in Known_Tps][song_num - 1]
                 song_chosen_path = song_chosen.value
                 print('Uploading custom song')
                 API_tile.send_custom_song(song_chosen_path)
