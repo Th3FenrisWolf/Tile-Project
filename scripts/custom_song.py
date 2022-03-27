@@ -1,19 +1,23 @@
 import sys, os
 from known_tps import Known_Tps
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'tile'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'tile_api'))
 from tile import Tile, Songs, Strength
 from known_tiles import Known_Tiles
 from time import sleep
 
-tile = Tile("db:1a:96:20:d0:a0", Known_Tiles.toy_auth.value)
+tile = Tile(Known_Tiles.toy_id.value, Known_Tiles.toy_auth.value)
 
 tile.ring(Songs.FIND.value, Strength.LOW.value)
 
-sleep(10)
+print(tile.curr_song_id)
 
-tile.send_custom_song(Known_Tps.skipping_stones.value)
+sleep(15)
 
-sleep(10)
+tile.send_custom_song(Known_Tps.to_and_fro.value)
+
+sleep(15)
+
+print(tile.curr_song_id)
 
 tile.ring(Songs.FIND.value, Strength.LOW.value)
 

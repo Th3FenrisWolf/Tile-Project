@@ -1,12 +1,12 @@
 import sys, os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'tile'))
-from tile_api import Tile
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'tile_api'))
+from tile import Tile
 from known_tiles import Known_Tiles
 
-tile = Tile(Known_Tiles.spare_key_mac.value, Known_Tiles.spare_key_auth.value)
+tile = Tile(Known_Tiles.backpack_id.value, Known_Tiles.backpack_auth.value)
 
-file_path = "/home/tile/Downloads/Tile_FW_Image_25.03.29.0.bin"
+file_path = "/home/tile/Desktop/cedarville-2021/tile_firmwares/Tile_FW_Image_25.04.06.0.bin"
 
-tile.send_firmware_update(file_path, "25.03.29.0")
+tile.send_firmware_update(file_path, "25.04.06.0")
 
 tile.disconnect()
