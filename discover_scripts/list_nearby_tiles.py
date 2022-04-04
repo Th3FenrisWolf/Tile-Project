@@ -197,7 +197,7 @@ async def detection_callback(device, advertisement_data):
             # since we found what we're looking for, exit
             sys.exit(0)
 
-async def main(addr = None, time = 60.0):
+async def run(addr = None, time = 60.0):
     args = sys.argv[1:]
     global search_addr
     global tiles_found
@@ -222,8 +222,8 @@ async def main(addr = None, time = 60.0):
     print("\nTiles found:", str(tiles_found))
 
 # Run the program, catching any ^Cs
-try: 
-    asyncio.run(main())
-except KeyboardInterrupt:
-    print("\nTiles found:", str(tiles_found), "(scanner terminated early)")
-    sys.exit(0)
+#try: 
+#    asyncio.run(run())
+#except KeyboardInterrupt:
+#    print("\nTiles found:", str(tiles_found), "(scanner terminated early)")
+#    sys.exit(0)
