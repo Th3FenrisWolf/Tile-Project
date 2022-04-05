@@ -103,11 +103,7 @@ def main():
         tile_auth = tile_selected.auth_key
 
         # attempt to connect to this tile
-        print("Attempting to connect (please wait)")
-        API_tile = Tile(tile_id, tile_auth)
-        # ring after connect to show success
-        print("Connected")
-        API_tile.ring(Songs.ACTIVE.value, Strength.LOW.value)
+        
 
         # Step 7.m If their Tiles - ask if they'd like to ring, do a firmware update, or tdi for their selected Tile ("r" for ring, "f" for firmware update, "t" for tdi)
         action_chosen = input("For the selected Tile please type 'r' to ring the Tile, 'f' to perform a firmware update, or 't' to list all the Tile's info: ")
@@ -116,11 +112,23 @@ def main():
         while(action_chosen not in valid_actions):
             action_chosen = input(f"{action_chosen} is not a valid option, please type either r or f or t: ")
 
-    #   Step ring. List all the songs enumerated (both tps and songs preloaded on tile) -- and have the user choose one (like doing "3" for the third in the list)
-    #       List the possible volumes (low, medium, high aka 1,2,3) and have the user input which one they would like to choose (like doing "2" for medium volume)
-    #       Call the ring function with the tile id, auth key (need to get in this step), selected song, and selected volume
-    #       After it's done, ask if they would like to exit or restart - if exit then cleanly disconnect and clear all the variables, if restart go back to step 4
-        if(action_chosen == 'r'):
+        if(action_chosen == 't'):
+            # just run tdi on the selected tile
+            print("Here is the information from the Tile server for the selected Tile")
+            
+            # TODO access the tile here
+            print(f"{tile_selected.name}'s hardware version: {tile_selected.hardware_version}")
+            print(f"{tile_selected.name}'s firmware version: {tile_selected.firmware_version}")
+            print(f"{tile_selected.name}'s ID: {tile_selected.uuid}")
+            print(f"{tile_selected.name}'s authkey: {tile_selected.auth_key}")
+            print(f"{tile_selected.name}'s last known latitude and longitude: {tile_selected.latitude}, {tile_selected.longitude}")
+
+        elif(action_chosen == 'r'):
+            print("Attempting to connect (please wait)")
+            API_tile = Tile(tile_id, tile_auth)
+            # ring after connect to show success
+            print("Connected")
+            API_tile.ring(Songs.ACTIVE.value, Strength.LOW.value)
             # need to differentiate between the basic songs already loaded the the tps
             tps_or_loaded = input("Would you like to choose a programmable song or a basic song?\nEnter 'p' for a programmable song and 'b' for basic song: ")
             tps_or_loaded = tps_or_loaded.lower()
@@ -165,11 +173,14 @@ def main():
             # call ring fuction which is in tile.py and might need to change that slightly
             print(f"Playing {song_chosen.name}")
             API_tile.ring(song_number_code, song_volume.to_bytes(1, "little"))
+            API_tile.disconnect()
 
-        # Step firmware. List all the firmware versions enumerated -- and have the user choose one
-        # Call the tofu function with the tile id, auth key (need to get in this step), and selected firmware
-        # After it's done, ask if they would like to exit or restart - if exit then cleanly disconnect and clear all the variables, if restart go back to step 4
         elif(action_chosen == 'f'):
+            print("Attempting to connect (please wait)")
+            API_tile = Tile(tile_id, tile_auth)
+            # ring after connect to show success
+            print("Connected")
+            API_tile.ring(Songs.ACTIVE.value, Strength.LOW.value)
             # need to list all the possible firmwares to choose from
             print("Possible firmware versions to choose from are these: ")
             mypath = "./tile_firmwares"
@@ -178,23 +189,8 @@ def main():
             for b in onlyfiles:
                 print(f"{firmware_num}. {b}")
                 firmware_num+=1
-
-    #    Step tdi. List all tdi info
-    #       After it's done, ask if they would like to exit or restart - if exit then cleanly disconnect and clear all the variables, if restart go back to step 4
-
-        elif(action_chosen == 't'):
-            # just run tdi on the selected tile
-            print("tile info for the selected tile, just call tdi on it and also print out uuid, authkey, etc ")
-
-            # TODO access the tile here
-
-            print(f"{tile.name}'s hardware version: {tile.hardware_version}")
-            print(f"{tile.name}'s firmware version: {tile.firmware_version}")
-            print(f"{tile.name}'s ID: {tile.uuid}")
-            print(f"{tile.name}'s authkey: {tile.authkey}")
-            print(f"{tile.name}'s latitude and longitude: {tile.latitude}, {tile.longitude}")
-            
-
+            API_tile.disconnect()
+    
     # if selected to see all the tiles in the area
     if(tile_choice =='a'):
         # need to call findTiles here - but an abbreviated version of the script
@@ -207,17 +203,6 @@ def main():
     #           After it's done, ask if they would like to exit or restart - if exit then cleanly disconnect and clear all the variables, if restart go back to step 4
 
     # Step exit. Cleanly disconnect from the tile, call disconnect
-    API_tile.disconnect()
-
-    # random stuff
-    # printing out tps
-            # absolute_path = os.path.abspath(__file__)
-            # file_directory = os.path.dirname(absolute_path)
-            # song_val = tps.Known_Tps(3)
-
-            # my_path = os.path.join(file_directory, "Tile Programmable Songs (TPS)", song_val)
-            # # sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'scripts'))
-            # print(my_path)
-
+    
 if __name__ == "__main__":
     main()
