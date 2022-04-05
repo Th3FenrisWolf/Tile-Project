@@ -186,11 +186,11 @@ def main():
 
             # TODO access the tile here
 
-            print(f"{Tile.name}'s hardware version: {Tile.hardware_version}")
-            print(f"{Tile.name}'s firmware version: {Tile.firmware_version}")
-            print(f"{Tile.name}'s ID: {Tile.uuid}")
-            print(f"{Tile.name}'s authkey: {Tile.authkey}")
-            print(f"{Tile.name}'s latitude and longitude: {Tile.latitude}, {Tile.longitude}")
+            print(f"{tile.name}'s hardware version: {tile.hardware_version}")
+            print(f"{tile.name}'s firmware version: {tile.firmware_version}")
+            print(f"{tile.name}'s ID: {tile.uuid}")
+            print(f"{tile.name}'s authkey: {tile.authkey}")
+            print(f"{tile.name}'s latitude and longitude: {tile.latitude}, {tile.longitude}")
             
 
     # if selected to see all the tiles in the area
