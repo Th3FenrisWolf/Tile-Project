@@ -189,11 +189,20 @@ def beAmazing(tile_choice):
             # need to list all the possible firmwares to choose from
             print("Possible firmware versions to choose from are these: ")
             mypath = "./tile_firmwares"
-            onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
-            firmware_num = 1
-            for b in onlyfiles:
-                print(f"{firmware_num}. {b}")
-                firmware_num+=1
+
+            # Lists all the Tiles in the area
+            onlyfiles = sorted([f for f in listdir(mypath) if isfile(join(mypath, f))])
+            for firmware_num, b in enumerate(onlyfiles):
+                print(f"{firmware_num + 1}. {b}")
+                
+            firmware_selection = int(input("Which of these do you want to choose? Input that number: "))
+
+            # TODO validate
+            firmware_filename = onlyfiles[firmware_selection - 1]
+
+            firmware_version = firmware_filename[firmware_filename.rfind("_")+1:-4]
+
+            API_tile.send_firmware_update(f"{mypath}/{firmware_filename}", firmware_version)
 
             # Ask if the user wants to do something else
             action_chosen2 = input("Would you like to exit (e) or do something else (d)?")
@@ -206,8 +215,8 @@ def beAmazing(tile_choice):
                 credits()
             else:
                 chooseTiles()
-
-    # Lists all the Tiles in the area
+    
+    # if selected to see all the tiles in the area
     if(tile_choice =='a'):
         asyncio.run(list_nearby_tiles.run())
 
