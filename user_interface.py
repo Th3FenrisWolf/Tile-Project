@@ -16,6 +16,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'tile_firmwares/com
 from os import listdir
 from os.path import isfile, join
 sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'tile_api'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'discover_scripts'))
+from discover_scripts import list_nearby_tiles
 from tile import Tile
 
 email_regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+') # borrowed from somewhere on Github . . . 
@@ -197,6 +199,7 @@ def main():
     if(tile_choice =='a'):
         # need to call findTiles here - but an abbreviated version of the script
         print("need to call findTiles")
+        asyncio.run(list_nearby_tiles.run())
 
     # Step 6.a Have the Tiles listed with a number and the name (if there), mac address, and Tile ID, have the user input a number (such as "1" for the first in the list) to select which one they want to choose
 
