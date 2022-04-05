@@ -5,6 +5,9 @@ from hashlib import sha256
 import hmac
 import bleak
 
+# Print Debug information for this file (T/F):
+debug = False
+
 # constants defined within tile_lib.h
 TILE_TOA_CMD_UUID = "9d410018-35d6-f4dd-ba60-e7bd8dc491c0"
 TILE_TOA_RSP_UUID = "9d410019-35d6-f4dd-ba60-e7bd8dc491c0"
@@ -74,7 +77,7 @@ class Toa_Rsp_Code(Enum):
 # Send connectionless cmd -- necessary for channel setup and TDI commands; doesn't require auth key
 async def send_connectionless_cmd(tile: 'Tile', cmd_code: Toa_Cmd_Code, payload: bytes) -> bytes:
   data: bytes = TOA_CONNECTIONLESS_CID + tile.token + cmd_code.value + payload
-  print(f"Adding {data.hex()} to the send_queue")
+  if debug : print(f"Adding {data.hex()} to the send_queue")
   await tile.send_queue.put(data)
 
 MAX_PAYLOAD_LEN = 22
@@ -95,12 +98,12 @@ async def send_channel_cmd(tile: 'Tile', cmd_code: Toa_Cmd_Code, payload: bytes)
   mic = get_mic_hash(tile.session_key, tile.nonce_a.to_bytes(4, "little"), b"\x01", plaintext)
   final_payload = tile.channel_id + plaintext + mic
 
-  print(f"Adding {final_payload.hex()} to the send_queue")
+  if debug : print(f"Adding {final_payload.hex()} to the send_queue")
   await tile.send_queue.put(final_payload)
 
 async def rsp_handler(tile: 'Tile', _sender: int, data: bytearray):
     rsp_data = bytes(data)
-    print(f"Received: {rsp_data.hex()}")
+    if debug : print(f"Received: {rsp_data.hex()}")
     if rsp_data[0:1] == TOA_CONNECTIONLESS_CID:
         token = rsp_data[1:5]
         rsp_code = rsp_data[5:6]
@@ -115,7 +118,6 @@ async def rsp_handler(tile: 'Tile', _sender: int, data: bytearray):
         else:
             print(f"unhandled rsp_code: {rsp_code}")
     else:
-      channel_id = rsp_data[0:1]
       rsp_code = rsp_data[1:2]
       rsp_payload = rsp_data[2:]
       if rsp_code == Toa_Rsp_Code.TOFU_CTL.value:
@@ -128,7 +130,7 @@ async def rsp_handler(tile: 'Tile', _sender: int, data: bytearray):
         from commands.song import handle_song_rsp
         handle_song_rsp(tile, rsp_payload)
       else:
-        print("not handling connection responses yet")
+        print("received unhandled response")
 
 def disconnected_callback(client):
     print("Client with address {} got disconnected!".format(client.address))
@@ -137,17 +139,17 @@ def disconnected_callback(client):
 async def cmd_sender(tile: 'Tile'):
   while True:
     try:
-      print(f"Attempting to connect to {tile.mac_address}")
+      print(f"Attempting to connect to Tile device @ {tile.mac_address}")
       async with bleak.BleakClient(tile.mac_address, timeout=15) as client:
         print(f"Successfully connected to {tile.mac_address}")
         client.set_disconnected_callback(disconnected_callback)
         await client.start_notify(TILE_TOA_RSP_UUID, partial(rsp_handler, tile))
         while True:
           if tile.send_queue.empty() and tile._thread_ended:
-            print("will break now and close the threads?")
+            if debug : print("will break now and close the threads")
             return
           data: bytes = await tile.send_queue.get()
-          print(f"Attempting to send {data.hex()} to {tile.mac_address}")
+          if debug : print(f"Attempting to send {data.hex()} to {tile.mac_address}")
           await client.write_gatt_char(TILE_TOA_CMD_UUID, data)
     except Exception as e:
       print(e)

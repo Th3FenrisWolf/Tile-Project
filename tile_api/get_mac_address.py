@@ -133,12 +133,13 @@ async def get_mac_address(search_id, search_time = 80) -> str:
     await connector_future
     return scan_conditions.found_tile_mac
 
-import time
-if __name__ == '__main__':
-    try:
-        start = time.time()
-        print(asyncio.run(get_mac_address("615BA301A0F17F22")))
-        end = time.time()
-        print(f"({str(end - start)[:4]} seconds)")
-    except KeyboardInterrupt:
-        print("\nScanner terminated early")
+# Code below was used for debugging purposes and may still be useful for future research
+#import time
+#if __name__ == '__main__':
+#    try:
+#        start = time.time()
+#        print(asyncio.run(get_mac_address("615BA301A0F17F22")))
+#        end = time.time()
+#        print(f"({str(end - start)[:4]} seconds)")
+#    except KeyboardInterrupt:
+#        print("\nScanner terminated early")

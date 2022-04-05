@@ -195,7 +195,6 @@ def main():
     # if selected to see all the tiles in the area
     if(tile_choice =='a'):
         # need to call findTiles here - but an abbreviated version of the script
-        print("need to call findTiles")
         asyncio.run(list_nearby_tiles.run())
 
     # Step 6.a Have the Tiles listed with a number and the name (if there), mac address, and Tile ID, have the user input a number (such as "1" for the first in the list) to select which one they want to choose

@@ -3,6 +3,9 @@ from time import sleep
 import asyncio
 from io import BytesIO
 
+# Print Debug information for this file (T/F):
+debug = False
+
 # referenced in tile_song_module.h:216
 class Strength(Enum):
     SILENT = b"\x00"
@@ -60,7 +63,7 @@ def handle_song_rsp(tile: 'Tile', rsp_payload: bytes):
     song_rsp_code = rsp_payload[0:1]
     if song_rsp_code == Song_Rsp_Code.PROGRAM_READY.value:
         tile._song_block_length = int.from_bytes(rsp_payload[1:2], byteorder="little")
-        print(f"song_block_length={tile._song_block_length}")
+        if debug : print(f"song_block_length={tile._song_block_length}")
         tile._song_program_ready_rsp_evt.set()
     elif song_rsp_code == Song_Rsp_Code.BLOCK_OK.value:
         tile._song_block_ok_rsp_evt.set()
@@ -72,7 +75,7 @@ def handle_song_rsp(tile: 'Tile', rsp_payload: bytes):
         tile._curr_song_id = int.from_bytes(rsp_payload[2:4], byteorder='little')
         tile._song_map_rsp_evt.set()
     else:
-        print(f"not handling song rsp {song_rsp_code.hex()}")
+        if debug : print(f"not handling song rsp {song_rsp_code.hex()}")
 
 # the implicit duration is 0xfe, which appears to just play the song in its entirety
 # strength ranges from 0-3, where 0 is silent and 3 is loudest
@@ -109,7 +112,7 @@ async def upload_custom_song(tile: 'Tile', file_path: str):
     with open(file_path, "rb") as f:
         block_num = 0
         while len(block := f.read(tile._song_block_length)):
-            print(f"--------------------{block_num}------------------")
+            if debug : print(f"--------------------{block_num}------------------")
             crc16_bytes = crc16(0, block).to_bytes(2, 'little')
             block_io = BytesIO(block + crc16_bytes)
             while len(packet := block_io.read(MAX_DATA_PAYLOAD)):
