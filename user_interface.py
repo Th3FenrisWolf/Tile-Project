@@ -17,6 +17,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'tile_firmwares/com
 from os import listdir
 from os.path import isfile, join
 sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'tile_api'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'discover_scripts'))
+from discover_scripts import list_nearby_tiles
 from tile import Tile
 
 email_regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+') # borrowed from somewhere on Github . . . 
@@ -187,17 +189,18 @@ def main():
 
             # TODO access the tile here
 
-            print(f"{Tile.name}'s hardware version: {Tile.hardware_version}")
-            print(f"{Tile.name}'s firmware version: {Tile.firmware_version}")
-            print(f"{Tile.name}'s ID: {Tile.uuid}")
-            print(f"{Tile.name}'s authkey: {Tile.authkey}")
-            print(f"{Tile.name}'s latitude and longitude: {Tile.latitude}, {Tile.longitude}")
+            print(f"{tile.name}'s hardware version: {tile.hardware_version}")
+            print(f"{tile.name}'s firmware version: {tile.firmware_version}")
+            print(f"{tile.name}'s ID: {tile.uuid}")
+            print(f"{tile.name}'s authkey: {tile.authkey}")
+            print(f"{tile.name}'s latitude and longitude: {tile.latitude}, {tile.longitude}")
             
 
     # if selected to see all the tiles in the area
     if(tile_choice =='a'):
         # need to call findTiles here - but an abbreviated version of the script
         print("need to call findTiles")
+        asyncio.run(list_nearby_tiles.run())
 
     # Step 6.a Have the Tiles listed with a number and the name (if there), mac address, and Tile ID, have the user input a number (such as "1" for the first in the list) to select which one they want to choose
 
