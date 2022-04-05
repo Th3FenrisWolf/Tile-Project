@@ -8,6 +8,7 @@ from aiohttp import ClientSession
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'pytile/pytile'))
 from api import async_login
+from errors import *
 sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'tile_api/commands'))
 from song import Songs, Strength
 sys.path.append(os.path.join(os.path.dirname(__file__), '.', 'scripts'))
