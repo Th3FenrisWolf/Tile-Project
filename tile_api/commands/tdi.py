@@ -1,6 +1,5 @@
 from enum import Enum
 from toa import send_connectionless_cmd, Toa_Cmd_Code
-import asyncio
 
 # CMD
 

@@ -193,10 +193,10 @@ class Tile:
         if self.auth_key is not None:
             self.submit_async(send_channel_cmd(self, Toa_Cmd_Code.CLOSE_CHANNEL, b"")).result()
             # shut down the thread
-            print("thread_ended setting to true")
+            #print("thread_ended setting to true")
             self._thread_ended = True
 
-        print("waiting for cmd_sender to end")
+        #print("waiting for cmd_sender to end")
         self._cmd_sender_future.result()
 
         self._loop.call_soon_threadsafe(self._loop.stop)
@@ -206,7 +206,7 @@ class Tile:
 
         self._loop.call_soon_threadsafe(self._loop.close)
 
-        print("Waiting for thread")
+        #print("Waiting for thread")
         self._loop_thread.join()
 
-        print("Closed the channel - disconnected now!")
+        print("Tile Channel closed -- Disconnected")

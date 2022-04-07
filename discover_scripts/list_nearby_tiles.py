@@ -19,6 +19,9 @@ from toa import Toa_Cmd_Code, Toa_Rsp_Code
 # to find specifically the Tile with address E6:9E:55:1A:91:28:
 #   python3 findTiles 60 E6:9E:55:1A:91:28
 
+# Print Debug information for this file (T/F):
+debug = False
+
 known_devices = {
     # Change this dictionary to your own devices and known MAC addresses as you find them
     "Spare key":            "E6:9E:55:1A:91:28",
@@ -119,13 +122,13 @@ def tile_id_rsp_handler(tile_id_wrapper, _sender, data):
 async def get_tile_id(btaddr):
     while True:
         try:
-            print(f"trying to talk to bluetooth address {btaddr}")
+            if debug : print(f"attempting to talk to bluetooth address {btaddr}")
             async with BleakClient(btaddr, timeout=20) as client:
                 tile_id_wrapper = Tile_ID_Wrapper(asyncio.Event())
                 await client.start_notify(TILE_TOA_RSP_UUID, partial(tile_id_rsp_handler, tile_id_wrapper))
                 await client.write_gatt_char(TILE_TOA_CMD_UUID, data)
                 await tile_id_wrapper.got_tile_id_evt.wait()
-                #print("Tile ID: ", str(tile_id_wrapper.tile_id))
+                if debug : print("Tile ID: ", str(tile_id_wrapper.tile_id))
                 return tile_id_wrapper.tile_id
         except Exception as e:
             pass
@@ -157,7 +160,7 @@ async def get_device_data(device, advertisement_data) -> str:
         info += str(advertisement_data)
     if Display_Attributes.TILE_ID.value == True:
         # get TDI information
-        #print("getting tile ID")
+        if debug : print("getting tile ID")
         if int(device.rssi) > -70:
             tile_id = pad(await get_tile_id(device.address), Pad_Lengths.TILE_ID.value)
         else:
