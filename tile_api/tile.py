@@ -71,7 +71,13 @@ class Tile:
             async def _create_session_key_created_evt(self):
                 self._session_key_created_evt = asyncio.Event()
 
+            async def _create_tap_evts(self):
+                self._single_tap_evt = asyncio.Event()
+                self._double_tap_evt = asyncio.Event()
+
             self.submit_async(_create_session_key_created_evt(self)).result()
+            self.submit_async(_create_tap_evts(self)).result()
+
             self.submit_async(request_open_channel(self)).result()
         else:
             self._thread_ended = True
@@ -186,7 +192,15 @@ class Tile:
         # start sending data
         self.submit_async(upload_custom_song(self, file_path)).result()
 
+    def wait_for_single_tap(self):
+        async def wrapper(self):
+            await self._single_tap_evt.wait()
+        self.submit_async(wrapper(self)).result()
 
+    def wait_for_double_tap(self):
+        async def wrapper(self):
+            await self._double_tap_evt.wait()
+        self.submit_async(wrapper(self)).result()
 
     def disconnect(self):
         # close channel if channel has been established
