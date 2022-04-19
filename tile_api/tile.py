@@ -14,6 +14,9 @@ from os import path
 from commands.tofu import request_tofu_ready, upload_firmware
 from get_mac_address import get_mac_address
 
+# Print Debug info
+debug = True
+
 # random byte values, required as seen used in the assembly 
 sres = b"\x22" * 4
 
@@ -39,13 +42,15 @@ class Tile:
         self.auth_key = auth_key
 
         async def _get_mac_address(self, tile_id):
+            if debug: print(f"Fetching MAC address for Tile ID {tile_id}...")
             mac = await get_mac_address(tile_id)
+            if debug: print(f"Found: Tile ID {tile_id} has current MAC Address {mac}")
             if mac:
                 self.mac_address = mac
             else:
                 # no mac address found, throw exception
                 raise Exception("No MAC address found for given Tile ID")
-            
+        
         self.submit_async(_get_mac_address(self, tile_id)).result()
 
         async def set_queue(self):

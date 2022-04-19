@@ -20,7 +20,7 @@ from toa import Toa_Cmd_Code, Toa_Rsp_Code
 #   python3 findTiles 60 E6:9E:55:1A:91:28
 
 # Print Debug information for this file (T/F):
-debug = False
+debug = True
 
 known_devices = {
     # Change this dictionary to your own devices and known MAC addresses as you find them
@@ -128,7 +128,7 @@ async def get_tile_id(btaddr):
                 await client.start_notify(TILE_TOA_RSP_UUID, partial(tile_id_rsp_handler, tile_id_wrapper))
                 await client.write_gatt_char(TILE_TOA_CMD_UUID, data)
                 await tile_id_wrapper.got_tile_id_evt.wait()
-                if debug : print("Tile ID: ", str(tile_id_wrapper.tile_id))
+                if debug : print("Found Tile ID: ", str(tile_id_wrapper.tile_id))
                 return tile_id_wrapper.tile_id
         except Exception as e:
             pass
@@ -200,6 +200,7 @@ async def detection_callback(device, advertisement_data):
             # since we found what we're looking for, exit
             sys.exit(0)
 
+# This is the main program
 async def run(addr = None, time = 60.0):
     args = sys.argv[1:]
     global search_addr
@@ -225,8 +226,9 @@ async def run(addr = None, time = 60.0):
     print("\nTiles found:", str(tiles_found))
 
 # Run the program, catching any ^Cs
-#try: 
-#    asyncio.run(run())
-#except KeyboardInterrupt:
-#    print("\nTiles found:", str(tiles_found), "(scanner terminated early)")
-#    sys.exit(0)
+if __name__ == "__main__":
+    try: 
+        asyncio.run(run())
+    except KeyboardInterrupt:
+        print("\nTiles found:", str(tiles_found), "(scanner terminated early)")
+        sys.exit(0)

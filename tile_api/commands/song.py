@@ -4,7 +4,7 @@ import asyncio
 from io import BytesIO
 
 # Print Debug information for this file (T/F):
-debug = False
+debug = True
 
 # referenced in tile_song_module.h:216
 class Strength(Enum):

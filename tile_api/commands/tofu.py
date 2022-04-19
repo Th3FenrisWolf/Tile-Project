@@ -5,7 +5,7 @@ from enum import Enum
 import asyncio
 
 # Print Debug information for this file (T/F):
-debug = False
+debug = True
 
 # CMD
 

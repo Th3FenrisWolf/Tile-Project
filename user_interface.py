@@ -124,7 +124,7 @@ def user_interface():
 
                 # Ring the Tile
                 elif(action_chosen == 'r'):
-                    print("Attempting to connect (please wait)")
+                    print("Attempting to connect - please wait...")
                     API_tile = Tile(tile_id, tile_auth)
                     # ring after connect to show success
                     print("Connected")
@@ -180,7 +180,7 @@ def user_interface():
 
                 # Firmware update - need to tell the user they can only go up in firmware not down
                 elif(action_chosen == 'f'):
-                    print("Attempting to connect (please wait)")
+                    print("Attempting to connect - please wait...")
                     API_tile = Tile(tile_id, tile_auth)
                     # ring after connect to show success
                     print("Connected")

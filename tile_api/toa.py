@@ -6,7 +6,7 @@ import hmac
 import bleak
 
 # Print Debug information for this file (T/F):
-debug = False
+debug = True
 
 # constants defined within tile_lib.h
 TILE_TOA_CMD_UUID = "9d410018-35d6-f4dd-ba60-e7bd8dc491c0"
@@ -103,7 +103,7 @@ async def send_channel_cmd(tile: 'Tile', cmd_code: Toa_Cmd_Code, payload: bytes)
 
 async def rsp_handler(tile: 'Tile', _sender: int, data: bytearray):
     rsp_data = bytes(data)
-    if debug : print(f"Received: {rsp_data.hex()}")
+    #if debug : print(f"Received: {rsp_data.hex()}")
     if rsp_data[0:1] == TOA_CONNECTIONLESS_CID:
         token = rsp_data[1:5]
         rsp_code = rsp_data[5:6]
@@ -146,7 +146,6 @@ async def cmd_sender(tile: 'Tile'):
         await client.start_notify(TILE_TOA_RSP_UUID, partial(rsp_handler, tile))
         while True:
           if tile.send_queue.empty() and tile._thread_ended:
-            if debug : print("will break now and close the threads")
             return
           data: bytes = await tile.send_queue.get()
           if debug : print(f"Attempting to send {data.hex()} to {tile.mac_address}")

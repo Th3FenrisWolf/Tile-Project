@@ -122,15 +122,17 @@ async def get_mac_address(search_id, search_time = 80) -> str:
             break
     else:
         # TODO throw exception or something
-        print("ERROR never found mac address for given tile id")
-    
-    if not scan_conditions.found_tile_mac:
         scan_conditions.found_tile_mac = None
+        print("ERROR never found mac address for given tile id")
 
+    print("stopping scanner")
+    print(scanner)
     await scanner.stop()
+    print("scanner stopped, awaiting connector_future")
     scan_conditions.scanning = False
     # wait for the connector task to end before closing
     await connector_future
+    print(f"returning MAC of {scan_conditions.found_tile_mac}")
     return scan_conditions.found_tile_mac
 
 # Code below was used for debugging purposes and may still be useful for future research
