@@ -83,7 +83,6 @@ def print_device_data(device, advertisement_data):
         info += pad(str(devices_found), Pad_Lengths.DEVICE_NUM.value)
     if Display_Attributes.NAME.value == True:
         #if no name, print manufacturer name
-        # TODO: make sure this doesn't break linux
         if device.name == None or device.name == "" or device.name[:2] == device.address[:2]:
             name = get_manufacturer_name(device)
             info += pad(name, Pad_Lengths.NAME.value)

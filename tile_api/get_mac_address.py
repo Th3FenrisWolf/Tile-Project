@@ -6,6 +6,9 @@ from commands.tdi import Tdi_Cmd_Code, Tdi_Rsp_Code
 from toa import Toa_Cmd_Code, Toa_Rsp_Code
 import itertools
 
+# Print Debug info
+debug = True
+
 # only connections with an RSSI better than this will be attempted
 RSSI_SEARCH_THRESHOLD = -75
 
@@ -114,34 +117,29 @@ async def get_mac_address(search_id, search_time = 80) -> str:
     scanner.register_detection_callback(partial(detection_callback, discovered_tiles_pq))
     # run scanner
     await scanner.start()
-    # TODO: clean this up
     # better way to do this: https://stackoverflow.com/questions/37209864/interrupt-all-asyncio-sleep-currently-executing
     for _ in range(search_time):
         await asyncio.sleep(1)
         if scan_conditions.found_tile_mac:
             break
     else:
-        # TODO throw exception or something
+        # TODO throw exception
         scan_conditions.found_tile_mac = None
         print("ERROR never found mac address for given tile id")
-
-    print("stopping scanner")
-    print(scanner)
     await scanner.stop()
-    print("scanner stopped, awaiting connector_future")
+    if debug: print("scanner stopped, awaiting connector thread shutdown")
     scan_conditions.scanning = False
     # wait for the connector task to end before closing
     await connector_future
-    print(f"returning MAC of {scan_conditions.found_tile_mac}")
     return scan_conditions.found_tile_mac
 
 # Code below was used for debugging purposes and may still be useful for future research
-#import time
-#if __name__ == '__main__':
-#    try:
-#        start = time.time()
-#        print(asyncio.run(get_mac_address("615BA301A0F17F22")))
-#        end = time.time()
-#        print(f"({str(end - start)[:4]} seconds)")
-#    except KeyboardInterrupt:
-#        print("\nScanner terminated early")
+import time
+if __name__ == '__main__':
+    try:
+        start = time.time()
+        print(asyncio.run(get_mac_address("615BA301A0F17F22")))
+        end = time.time()
+        print(f"({str(end - start)[:4]} seconds)")
+    except KeyboardInterrupt:
+        print("\nScanner terminated early")
