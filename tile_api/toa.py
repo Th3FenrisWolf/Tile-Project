@@ -129,6 +129,9 @@ async def rsp_handler(tile: 'Tile', _sender: int, data: bytearray):
       elif rsp_code == Toa_Rsp_Code.SONG.value:
         from commands.song import handle_song_rsp
         handle_song_rsp(tile, rsp_payload)
+      elif rsp_code == Toa_Rsp_Code.TDT.value:
+        from commands.tdt import handle_tdt_rsp
+        handle_tdt_rsp(tile, rsp_payload)
       else:
         print("received unhandled response")
 
