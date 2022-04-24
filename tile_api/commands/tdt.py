@@ -15,9 +15,9 @@ class Tdt_Rsp_Code(Enum):
     ERROR_PARAMS      = b"\x11"
 
 class Tdt_Tap_Type(Enum):
-    STI = b"\x00" 
+    STI = b"\x00" # Single tap
     STD = b"\x01"
-    DT  = b"\x02"
+    DT  = b"\x02" # Double tap
     LT  = b"\x03"
 
 def handle_tdt_rsp(tile: 'Tile', rsp_payload: bytes):
@@ -25,9 +25,11 @@ def handle_tdt_rsp(tile: 'Tile', rsp_payload: bytes):
     if tdt_rsp_code == Tdt_Rsp_Code.NOTIFY.value:
         tdt_tap_type = rsp_payload[1:2]        
         if tdt_tap_type == Tdt_Tap_Type.STI.value:
+            # Single tap
             tile._single_tap_evt.set()
             tile._single_tap_evt.clear()
         elif tdt_tap_type == Tdt_Tap_Type.DT.value:
+            # Double tap
             tile._double_tap_evt.set()
             tile._double_tap_evt.clear()
         else:

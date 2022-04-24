@@ -103,21 +103,23 @@ async def send_channel_cmd(tile: 'Tile', cmd_code: Toa_Cmd_Code, payload: bytes)
 
 async def rsp_handler(tile: 'Tile', _sender: int, data: bytearray):
     rsp_data = bytes(data)
-    #if debug : print(f"Received: {rsp_data.hex()}")
+    if debug : print(f"Received: {rsp_data.hex()}")
     if rsp_data[0:1] == TOA_CONNECTIONLESS_CID:
-        token = rsp_data[1:5]
-        rsp_code = rsp_data[5:6]
-        rsp_payload = rsp_data[6:]
+      # Handle connectionless response
+      token = rsp_data[1:5]
+      rsp_code = rsp_data[5:6]
+      rsp_payload = rsp_data[6:]
 
-        if rsp_code == Toa_Rsp_Code.OPEN_CHANNEL.value:
-            from commands.channel import handle_open_channel_rsp
-            handle_open_channel_rsp(tile, rsp_payload)
-        elif rsp_code == Toa_Rsp_Code.TDI.value:
-            from commands.tdi import handle_tdi_rsp
-            handle_tdi_rsp(tile, rsp_payload)
-        else:
-            print(f"unhandled rsp_code: {rsp_code}")
+      if rsp_code == Toa_Rsp_Code.OPEN_CHANNEL.value:
+          from commands.channel import handle_open_channel_rsp
+          handle_open_channel_rsp(tile, rsp_payload)
+      elif rsp_code == Toa_Rsp_Code.TDI.value:
+          from commands.tdi import handle_tdi_rsp
+          handle_tdi_rsp(tile, rsp_payload)
+      else:
+          print(f"unhandled rsp_code: {rsp_code}")
     else:
+      # Handle authenticated response
       rsp_code = rsp_data[1:2]
       rsp_payload = rsp_data[2:]
       if rsp_code == Toa_Rsp_Code.TOFU_CTL.value:
