@@ -49,7 +49,7 @@ def print_banner():
     print("| '__/ _ \ | | | | |  _  | '_ \| |/ _ \\")
     print("| | |  __/ | \ \_/ / | | | |_) | |  __/")
     print("|_|  \___\_/  \___/\_| |_/_.__/|_|\___|\n")
-    print("An API control your Tile Trackers.")
+    print("An API to control your Tile Trackers.")
     print("_" * terminal_width + "\n")
 
 def getPyTiles():
@@ -106,12 +106,16 @@ def user_interface():
 
                 # List device info about the Tile
                 if(action_chosen == 't'):
+                    print("Attempting to connect - please wait...")
+                    API_tile = Tile(tile_id, tile_auth)
+                    print("Connected")
+
                     print("Here is the information from the Tile server for the selected Tile")
-                    print(f"{tile_selected.name}'s hardware version: {tile_selected.hardware_version}")
-                    print(f"{tile_selected.name}'s firmware version: {tile_selected.firmware_version}")
-                    print(f"{tile_selected.name}'s ID: {tile_selected.uuid}")
-                    print(f"{tile_selected.name}'s authkey: {tile_selected.auth_key}")
-                    print(f"{tile_selected.name}'s last known latitude and longitude: {tile_selected.latitude}, {tile_selected.longitude}")
+                    print(f"{tile_selected.name}'s hardware version: {API_tile.hw_version}")
+                    print(f"{tile_selected.name}'s firmware version: {API_tile.fw_version}")
+                    print(f"{tile_selected.name}'s model number: {API_tile.model_num}")
+
+                    print(f"{tile_selected.name}'s ID: {API_tile.tile_id}")
 
                     # Ask if the user wants to do something else)
                     action_chosen2 = input("Would you like to exit (e) or do something else (d)?")
@@ -144,7 +148,7 @@ def user_interface():
                             print(f"{song_num+1}. {song.name}")
                         song_number = int(input("Which of these do you want to choose? Input that number: "))
                         # TODO validate
-                        song_chosen = [e for e in Known_Tps][song_num - 1]
+                        song_chosen = [e for e in Known_Tps][song_number - 1]
                         song_chosen_path = song_chosen.value
                         print('Uploading custom song')
                         API_tile.send_custom_song(song_chosen_path)
@@ -225,34 +229,7 @@ def user_interface():
                     action_chosen2 = input(f"{action_chosen2} is not a valid option, please type either e or d: ")
                 if(action_chosen2 == 'e'):
                     tile_choice = 'e'
-        credits()
-
-def credits():
-    print("reTOAble created by")                                                                            
-    print(" _____                _____ _ _               _   _                           ")                           
-    print("| __  |_ _ ___ ___   |  _  | | |_ ___ ___ ___| |_| |_                         ")                        
-    print("|    -| | | .'|   |  |     | | . |  _| -_|  _|   |  _|                        ")                     
-    print("|__|__|_  |__,|_|_|  |__|__|_|___|_| |___|___|_|_|_|                          ")                  
-    print("      |___|                                                                   ")               
-    print("                                                                              ")            
-    print(" _____       _     _ _            _____ _       _             _     _   _   _ ") 
-    print("|     |___ _| |___| |_|___ ___   |     | |_ ___|_|___ _ _ ___| |___| |_| |_|_|") 
-    print("| | | | .'| . | -_| | |   | -_|  |   --|   | .'| |  _| | | . | | . |  _|  _| |") 
-    print("|_|_|_|__,|___|___|_|_|_|_|___|  |_____|_|_|__,|_|_|  \_/|___|_|___|_| |_| |_|") 
-    print("                                                                              ") 
-    print("                                                                              ") 
-    print(" _____ _           _   _          ____  _ _           _                       ") 
-    print("|_   _|_|_____ ___| |_| |_ _ _   |    \|_| |_ ___ ___| |_                     ") 
-    print("  | | | |     | . |  _|   | | |  |  |  | | . | -_|  _|  _|                    ") 
-    print("  |_| |_|_|_|_|___|_| |_|_|_  |  |____/|_|___|___|_| |_|                      ") 
-    print("                          |___|                                               ") 
-    print("                                                                              ") 
-    print(" _____         _              _ _ _ _         _     _   _                     ") 
-    print("|_   _|_ _ ___| |_ ___ ___   | | | |_|___ ___|_|___| |_| |_                   ") 
-    print("  | | | | |  _| '_| -_|  _|  | | | | |   |  _| | . |   |  _|                  ") 
-    print("  |_| |___|___|_,_|___|_|    |_____|_|_|_|_| |_|_  |_|_|_|                    ") 
-    print("                                               |___|                          ") 
-    print("                                                                              ")         
+     
 
 def main():
     print_banner() 
