@@ -15,7 +15,7 @@ from commands.tofu import request_tofu_ready, upload_firmware
 from get_mac_address import get_mac_address
 
 # Print Debug info
-debug = True
+debug = False
 
 # random byte values, required as seen used in the assembly 
 sres = b"\x22" * 4

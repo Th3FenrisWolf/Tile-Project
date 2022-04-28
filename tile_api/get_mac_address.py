@@ -7,7 +7,7 @@ from toa import Toa_Cmd_Code, Toa_Rsp_Code
 import itertools
 
 # Print Debug info
-debug = True
+debug = False
 
 # only connections with an RSSI better than this will be attempted
 RSSI_SEARCH_THRESHOLD = -75

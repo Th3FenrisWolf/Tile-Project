@@ -20,7 +20,7 @@ from toa import Toa_Cmd_Code, Toa_Rsp_Code
 #   python3 findTiles 60 E6:9E:55:1A:91:28
 
 # Print Debug information for this file (T/F):
-debug = True
+debug = False
 
 known_devices = {
     # Change this dictionary to your own devices and known MAC addresses as you find them
