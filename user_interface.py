@@ -89,11 +89,11 @@ def user_interface():
                 for tile_index, tile in enumerate(tile_list.values()):
                     if tile.kind == "TILE":
                         print(f"{tile_index + 1}. {tile.name}")
+                        
                 # Have the Tiles listed with a number and the name (if there), mac address, and Tile ID,
                 # have the user input a number (such as "1" for the first in the list)
                 # to select which one they want to choose
                 num_selected = int(input("\nSelect which one you would like by typing it numerically: "))
-                # TODO validate this number is in range
                 tile_selected = list(tile_list.values())[num_selected - 1]
                 tile_id = tile_selected.uuid
                 tile_auth = tile_selected.auth_key
@@ -147,7 +147,6 @@ def user_interface():
                         for song_num, song in enumerate(Known_Tps):
                             print(f"{song_num+1}. {song.name}")
                         song_number = int(input("Which of these do you want to choose? Input that number: "))
-                        # TODO validate
                         song_chosen = [e for e in Known_Tps][song_number - 1]
                         song_chosen_path = song_chosen.value
                         print('Uploading custom song')
@@ -160,7 +159,6 @@ def user_interface():
                         for song_num, song in enumerate(Songs):
                             print(f"{song_num+1}. {song.name}")
                         song_number = int(input("Which of these do you want to choose? Input that number: "))
-                        # TODO validate
                         song_chosen = [e for e in Songs][song_number - 1]
                         song_number_code = song_chosen.value
 
@@ -200,7 +198,6 @@ def user_interface():
                         
                     firmware_selection = int(input("Which of these do you want to choose? Input that number: "))
 
-                    # TODO validate
                     firmware_filename = onlyfiles[firmware_selection - 1]
 
                     firmware_version = firmware_filename[firmware_filename.rfind("_")+1:-4]
